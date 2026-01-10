@@ -73,9 +73,40 @@ Prompt templates for various scenarios:
 ### [skills/](./skills/)
 Documentation for custom Claude Code skills:
 
-- **[architecting-solutions](./skills/architecting-solutions.md)** - Analyzes requirements and creates detailed PRD documents for software implementation
-- **[planning-with-files](./skills/planning-with-files.md)** - Uses persistent markdown files for planning and progress tracking (Manus-style workflow)
-- **[self-improving-prd](./skills/self-improving-prd.md)** - A self-improving agent using reflection loops and multi-evaluator feedback to continuously optimize PRD generation
+#### Core Development
+
+| Skill | Description |
+|-------|-------------|
+| **[commit-helper](./skills/commit-helper/)** | Git commit messages following Conventional Commits specification |
+| **[code-reviewer](./skills/code-reviewer/)** | Comprehensive code review for quality, security, and best practices |
+| **[debugger](./skills/debugger/)** | Systematic debugging and issue resolution |
+| **[refactoring-specialist](./skills/refactoring-specialist/)** | Code refactoring and technical debt reduction |
+
+#### Documentation & Testing
+
+| Skill | Description |
+|-------|-------------|
+| **[documentation-engineer](./skills/documentation-engineer/)** | Technical documentation and README creation |
+| **[api-documenter](./skills/api-documenter/)** | OpenAPI/Swagger API documentation |
+| **[test-automator](./skills/test-automator/)** | Automated testing framework setup and test creation |
+| **[qa-expert](./skills/qa-expert/)** | Quality assurance strategy and quality gates |
+
+#### Architecture & DevOps
+
+| Skill | Description |
+|-------|-------------|
+| **[api-designer](./skills/api-designer/)** | REST and GraphQL API architecture design |
+| **[security-auditor](./skills/security-auditor/)** | Security audit covering OWASP Top 10 |
+| **[performance-engineer](./skills/performance-engineer/)** | Performance optimization and analysis |
+| **[deployment-engineer](./skills/deployment-engineer/)** | CI/CD pipelines and deployment automation |
+
+#### Planning & Architecture
+
+| Skill | Description |
+|-------|-------------|
+| **[architecting-solutions](./skills/architecting-solutions.md)** | PRD creation and requirement analysis |
+| **[planning-with-files](./skills/planning-with-files.md)** | Persistent file-based planning (Manus-style) |
+| **[self-improving-prd](./skills/self-improving-prd.md)** | Self-improving PRD with reflection loops |
 
 ### [agents/](./agents/)
 Agent configurations and usage patterns:
