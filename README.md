@@ -32,7 +32,7 @@ Documentation for custom Claude Code skills:
 
 - **[architecting-solutions](./skills/architecting-solutions.md)** - Analyzes requirements and creates detailed PRD documents for software implementation
 - **[planning-with-files](./skills/planning-with-files.md)** - Uses persistent markdown files for planning and progress tracking (Manus-style workflow)
-- **[prd-feedback-optimizer](./skills/prd-feedback-optimizer.md)** - A self-improving skill that collects user feedback and iteratively optimizes the architecting-solutions skill
+- **[self-improving-prd](./skills/self-improving-prd.md)** - A self-improving agent using reflection loops and multi-evaluator feedback to continuously optimize PRD generation
 
 ### [agents/](./agents/)
 Agent configurations and usage patterns:
