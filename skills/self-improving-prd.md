@@ -487,3 +487,194 @@ enum EStatus {
 - [ ] Each non-goal has a brief rationale if not obvious
 
 **Confidence**: 0.90
+
+### Pattern Learned: UI/UX Specification Granularity (2025-01-11)
+
+**Source**: Retrospective from borrow-refresh-button-position-prd.md showing rework caused by ambiguous UI specs
+
+**Experience**: UI PRD caused rework because:
+1. Net APY's layout position (same row vs next row) wasn't explicitly stated
+2. Button icon size (24px) wasn't specified in requirements
+3. Success criteria were too coarse to enable self-validation
+
+**Pattern**: UI/UX PRDs require explicit visual specifications
+
+| Bad | Good |
+|-----|------|
+| "Refresh button next to amount" | "Refresh button in same XStack as amount with gap='$3'" |
+| "Button size appropriate" | "IconButton iconSize='$4' (24px)" |
+| "Net APY nearby" | "Net APY in XStack below amount row (not same row)" |
+
+**Required Elements for UI PRDs**:
+
+```markdown
+## Visual Specification
+
+### Layout Structure
+- Relative position: same row / next row / below / above
+- Parent-child container relationships
+- Spacing values (gap, padding, margin)
+
+### Component Specs
+- Icon/Button sizes: iconSize="$4" (24px)
+- Text styles: size="$bodyMd", color="$textSubdued"
+- Component variants: size="small", variant="tertiary"
+
+### Before/After Visual
+```
+Before:          After:
+Net worth        Net worth
+$12,345          $12,345 [🔄]
+                 +5.2% APY
+```
+
+### Executable Success Criteria
+- [ ] Refresh button iconSize="$4" (24px)
+- [ ] Gap between amount and button is gap="$3"
+- [ ] Net APY is in XStack below amount (not same row)
+```
+
+**Quality Rules for UI PRDs**:
+- [ ] Relative position explicitly stated (same row/next row/below/above)
+- [ ] Component sizes with exact values (iconSize prop or px)
+- [ ] Spacing values defined (gap="$3", mx="$2")
+- [ ] Before/After visual comparison included
+- [ ] Success criteria are executable (verify by reading code)
+- [ ] Mobile vs desktop differences explicitly called out
+
+**Why This Works**:
+- Eliminates implementation guesswork
+- Prevents "wrong interpretation" rework
+- Enables developer self-validation before review
+- Reduces clarification back-and-forth
+
+**Confidence**: 0.95 (based on actual rework caused by missing specs)
+
+### Pattern Learned: Reuse Existing Infrastructure (2025-01-11)
+
+**Source**: Comparison between my borrow-claim-pending-prd and user's v2 PRD
+
+**Experience**: My PRD proposed adding `useBorrowTxUpdate` inside dialog (new polling), but v2 PRD correctly reused `BorrowContext.pendingTxs` which BorrowDataGate already updates.
+
+**Problem Patterns**:
+
+| Bad | Good |
+|-----|------|
+| "Add hook to fetch data" | "Reuse data already in Context" |
+| "Pass accountId/networkId/provider" | "Use existing Provider" |
+| "Create independent data source" | "Share single source of truth" |
+
+**Quality Checklist**:
+
+- [ ] Check if Context/Provider already has the data
+- [ ] Verify no duplicate polling/fetching
+- [ ] Confirm single source of truth
+- [ ] Only add new fetching when lifecycle is truly independent
+
+**Code Comparison**:
+
+```typescript
+// ❌ Don't: Add duplicate data fetching
+const { pendingTxs } = useBorrowTxUpdate({
+  accountId,
+  networkId,
+  provider,
+}); // Creates new polling loop!
+
+// ✅ Do: Reuse from existing Context
+const { pendingTxs } = useBorrowContext();
+// BorrowDataGate already updates this
+```
+
+**Why This Matters**:
+
+- Reduces network/background calls
+- Better performance (no redundant work)
+- Single source of truth
+- Simpler code (fewer hooks to manage)
+
+**Confidence**: 0.90
+
+### Pattern Learned: Click-Time vs Open-Time Computation (2025-01-11)
+
+**Source**: v2 PRD Claim All implementation
+
+**Experience**: My PRD computed claimable ids at dialog open time (stale by click), but v2 PRD computes at click time (always fresh).
+
+**Pattern**: For mutable state, compute at action time, not at render/init time.
+
+```typescript
+// ❌ Open-time: Snapshot risk
+const allIds = useMemo(() =>
+  claimableItems.filter(i => !pendingClaimIds.includes(i.id)),
+  [claimableItems, pendingClaimIds]
+);
+// Stale if pendingClaimIds changes before user clicks
+
+// ✅ Click-time: Always fresh
+onClaimAll: (ids: string[]) => Promise<void> => {
+  // Compute actionable ids at click time
+  const freshIds = claimableItems
+    .filter(i => !pendingClaimIds.includes(i.id))
+    .map(i => i.id);
+  return submitClaim(freshIds);
+}
+```
+
+**Decision Matrix**:
+
+| Computed | Use When | Avoid When |
+|----------|----------|------------|
+| Open-time | Immutable data, expensive computation | Mutable state, user actions |
+| Click-time | Mutable state, user-dependent filters | Very expensive operations |
+
+**Why This Works**:
+
+- State is always fresh when user acts
+- No stale data issues
+- Simpler reasoning about state
+
+**Confidence**: 0.85
+
+### Pattern Learned: Search Before Creating Components (2025-01-11)
+
+**Source**: BorrowAlerts PRD correction
+
+**Problem**: Proposed `BorrowAlerts.tsx` with `IReserveAlert` type when `EarnAlert` + `IEarnAlert[]` already existed.
+
+**Experience**:
+
+| My Approach | Correct Approach | Impact |
+|-------------|-----------------|--------|
+| Create `BorrowAlerts.tsx` | Reuse `EarnAlert.tsx` | Duplicate component |
+| Define `IReserveAlert` | Use `IEarnAlert[]` | Duplicate type |
+| File Changes: 3 files | File Changes: 2 files | Over-engineering |
+
+**Pattern**: ALWAYS search existing codebase before proposing new components/types.
+
+```bash
+# Pre-PRD search pattern
+grep -r "Alert" packages/kit/src/views/ --include="*.tsx"
+grep -r "IAlert\|Alert" packages/shared/types/ --include="*.ts"
+
+# If found, read existing implementation
+Read packages/kit/src/views/Staking/components/ProtocolDetails/EarnAlert.tsx
+```
+
+**Decision Matrix**:
+
+| Scenario | Decision |
+|----------|----------|
+| Existing component matches UI | Reuse |
+| Existing component needs small tweak | Extend or wrap |
+| Existing component has wrong responsibilities | Create new |
+| Not sure | Reuse first |
+
+**Why This Matters**:
+
+- Consistent UI across features
+- Less code to maintain
+- Shared improvements benefit all
+- Faster implementation
+
+**Confidence**: 0.90
