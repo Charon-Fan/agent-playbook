@@ -2,6 +2,8 @@
 
 > A collection of practical guides, prompts, and skills for AI Agents (Claude Code)
 
+English | [简体中文](./README.zh-CN.md)
+
 ## Overview
 
 This repository organizes and stores practical resources for working with AI Agents like Claude Code, including prompt templates, custom skills, usage examples, and best practices.
@@ -72,6 +74,13 @@ Prompt templates for various scenarios:
 
 ### [skills/](./skills/)
 Documentation for custom Claude Code skills:
+
+#### Meta Skills
+
+| Skill | Description |
+|-------|-------------|
+| **[skill-router](./skills/skill-router/)** | Intelligently routes user requests to the most appropriate skill |
+| **[create-pr](./skills/create-pr/)** | Creates PRs with automatic bilingual documentation updates |
 
 #### Core Development
 
