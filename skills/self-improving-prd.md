@@ -371,6 +371,74 @@ Track these over time:
 
 **Confidence**: 0.95 (based on direct user comparison)
 
+### Pattern Learned: Direct State Monitoring vs Callbacks (2025-01-11 v2)
+
+**Source**: Final Borrow Refresh implementation
+
+**Experience**: Initial design used `onRefresh` callback passed through multiple layers. Final version uses `usePrevious` to directly monitor `pendingCount` changes in BorrowDataGate.
+
+**Pattern**: Prefer direct state monitoring over callback chains
+
+```typescript
+// ❌ Callback chain - harder to trace
+useBorrowTxUpdate({
+  onRefresh: () => { /* refresh logic */ }
+});
+
+// ✅ Direct state monitoring - clearer intent
+const pendingCount = txs.length;
+const prevPendingCount = usePrevious(pendingCount);
+useEffect(() => {
+  if (pendingCount < prevPendingCount) {
+    requestBorrowRefresh({ reason: 'completed' });
+  }
+}, [pendingCount, prevPendingCount]);
+```
+
+**When to Use**:
+- State changes need to trigger side effects
+- Callback chain would be 3+ layers deep
+- Multiple components need to react to same state change
+
+**Quality Rules Added**:
+- [ ] Use `usePrevious` to detect state changes instead of callbacks when feasible
+- [ ] Keep state monitoring close to where state is consumed
+- [ ] Use callbacks only for cross-component boundaries
+
+**Confidence**: 0.90
+
+### Pattern Learned: State Machine Over Boolean Flags (2025-01-11 v2)
+
+**Source**: Final borrowRefreshCoordinator implementation
+
+**Experience**: Simple `inFlight: boolean` flag was insufficient. Final version uses `Idle/Waiting/Running` enum with explicit state transitions.
+
+**Pattern**:
+
+```typescript
+// ❌ Simple boolean - ambiguous state
+const inFlight = false;
+
+// ✅ State machine - clear transitions
+enum EStatus {
+  Idle = 'idle',
+  Waiting = 'waiting',  // Scheduled but not running yet
+  Running = 'running',
+}
+```
+
+**Why This Works**:
+- Prevents race conditions (can't schedule new request while running)
+- Distinguishes "waiting to run" from "currently running"
+- Easier to debug and log state transitions
+
+**Quality Rules Added**:
+- [ ] Use state machine for async operations with multiple phases
+- [ ] Prevent state transitions that don't make sense
+- [ ] Log state transitions for debugging
+
+**Confidence**: 0.85
+
 ### Pattern Learned: Measurable Success Criteria (2025-01-11)
 
 **Source**: User's PRD success criteria section
