@@ -1,0 +1,19 @@
+# Session logs - conversation history with Claude
+# Each session is stored in sessions/ directory with timestamp
+sessions/
+*.session.md
+
+# Notes and temporary files
+notes/
+*.tmp
+*.temp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
