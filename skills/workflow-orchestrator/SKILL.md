@@ -2,6 +2,11 @@
 name: workflow-orchestrator
 description: Automatically coordinates multi-skill workflows and triggers follow-up actions. Use when completing PRD creation, implementation, or any milestone that should trigger additional skills. This skill reads the auto-trigger configuration and executes the workflow chain.
 allowed-tools: Read, Write, Edit, Bash, Grep, AskUserQuestion
+hooks:
+  after_complete:
+    - trigger: session-logger
+      mode: auto
+      reason: "Save workflow execution context"
 ---
 
 # Workflow Orchestrator
@@ -98,6 +103,25 @@ Actions:
 2. Trigger session-logger (auto)
 ```
 
+### Universal Learning (Any Skill Complete)
+
+```markdown
+Detected when:
+- ANY skill completes its workflow
+- User provides feedback
+- Error or issue encountered
+
+Actions:
+1. Trigger self-improving-agent (background)
+2. Trigger session-logger (auto)
+
+The self-improving-agent:
+- Extracts experience from completed skill
+- Identifies patterns and insights
+- Updates related skills with learned patterns
+- Consolidates memory for future reference
+```
+
 ## Hook Implementation in Skills
 
 To enable auto-trigger, add this section to any skill's SKILL.md:
@@ -115,10 +139,36 @@ When this skill completes, automatically trigger:
 
 ### Current Skill Hooks
 
-- **prd-planner**: After PRD complete → self-improving-prd + session-logger
-- **self-improving-prd**: After improvement → create-pr + session-logger
-- **prd-implementation-precheck**: After implementation → code-reviewer + session-logger
+- **prd-planner**: After PRD complete → self-improving-agent + session-logger
+- **self-improving-agent**: After improvement → create-pr + session-logger
+- **prd-implementation-precheck**: After implementation → self-improving-agent + session-logger
+- **code-reviewer**: After review → self-improving-agent + session-logger
+- **debugger**: After debugging → self-improving-agent + session-logger
 - **create-pr**: After PR created → session-logger
+- **session-logger**: No trigger (terminates chain)
+
+### Universal Learning Pattern
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  ANY Skill Completes                        │
+└──────────────┬──────────────────────────────────────────────┘
+               │
+               ↓
+    ┌──────────────────────┐
+    │ workflow-orchestrator │
+    └──────────┬───────────┘
+               │
+    ┌──────────┴─────────┐
+    ↓                   ↓
+self-improving-agent  session-logger
+    ↓                   ↓
+Learn from experience  Save context
+    ↓                   ↓
+Update skills         Log session
+    ↓
+create-pr (if modified)
+```
 ```
 
 ## Workflow Examples
@@ -135,7 +185,7 @@ Phase 6 complete: PRD delivered
 workflow-orchestrator detects milestone
         ↓
 ┌─────────────────────────────────┐
-│ Background: self-improving-prd  │ → Reflects and improves
+│ Background: self-improving-agent │ → Learns from PRD patterns
 │ Auto: session-logger             │ → Saves session
 └─────────────────────────────────┘
 ```
@@ -147,18 +197,20 @@ User: "Create a PRD and implement it"
         ↓
 prd-planner → workflow-orchestrator
         ↓
-self-improving-prd → workflow-orchestrator
+self-improving-agent → workflow-orchestrator
         ↓
 prd-implementation-precheck
         ↓
 implementation complete → workflow-orchestrator
         ↓
-code-reviewer → workflow-orchestrator
+code-reviewer → self-improving-agent → workflow-orchestrator
         ↓
 create-pr → workflow-orchestrator
         ↓
 session-logger
 ```
+
+Each step triggers `self-improving-agent` to learn from the experience.
 
 ## Implementation Steps
 

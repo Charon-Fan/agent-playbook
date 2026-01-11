@@ -118,7 +118,8 @@ Documentation for custom Claude Code skills:
 | **[prd-implementation-precheck](./skills/prd-implementation-precheck/)** | Performs preflight review before implementing PRDs |
 | **[architecting-solutions](./skills/architecting-solutions.md)** | Technical solution and architecture design (not PRD-specific) |
 | **[planning-with-files](./skills/planning-with-files.md)** | General file-based planning for multi-step tasks |
-| **[self-improving-prd](./skills/self-improving-prd.md)** | Self-improving PRD with reflection loops |
+| **[self-improving-agent](./skills/self-improving-agent/)** | Universal self-improvement system that learns from ALL skill experiences |
+| **[self-improving-prd](./skills/self-improving-prd.md)** | Self-improving PRD with reflection loops (legacy, see self-improving-agent) |
 
 ### [agents/](./agents/)
 Agent configurations and usage patterns:
