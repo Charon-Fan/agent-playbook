@@ -36,23 +36,25 @@ This skill combines:
 
 To create a single, coherent PRD creation workflow that doesn't lose context.
 
-## 3-File Pattern for PRD Creation
+## 4-File Pattern for PRD Creation
 
-For every PRD project, create THREE files:
+For every PRD project, create FOUR files:
 
 ```text
+docs/prd-notes.md          → Store research, requirements, findings, options
 docs/prd-task-plan.md      → Track PRD creation phases and progress
-docs/prd-notes.md          → Store research, requirements, findings
-docs/{feature-name}-prd.md → Final PRD document
+docs/{feature-name}-prd.md → Product requirements (what & why)
+docs/{feature-name}-tech.md → Technical design (how)
 ```
 
 ### File Purposes
 
-| File | Purpose | Updated When |
-|------|---------|--------------|
-| `prd-task-plan.md` | Track progress, phases, checkboxes | Each phase completion |
-| `prd-notes.md` | Raw research, user requirements, constraints | New information gathered |
-| `{feature}-prd.md` | Polished PRD output | After requirements are clear |
+| File | Purpose | Audience | Updated When |
+|------|---------|----------|--------------|
+| `prd-notes.md` | Raw research, requirements, architecture options (A/B/C) | Self + reviewers | New information gathered |
+| `prd-task-plan.md` | Track progress, phases, checkboxes, timestamps | PM + dev lead | Each phase completion |
+| `{feature}-prd.md` | Product requirements (what & why), user flows | PM + stakeholders + devs | After requirements are clear |
+| `{feature}-tech.md` | Technical design (API, data flow, implementation) | Developers + architects | After architecture is decided |
 
 ## Workflow
 
@@ -61,12 +63,13 @@ docs/{feature-name}-prd.md → Final PRD document
 │                     PRD Creation Workflow                       │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  1. Initialize → Create 3 files with template                   │
+│  1. Initialize → Create 4 files with template                   │
 │  2. Requirements → Gather to prd-notes.md                       │
 │  3. Analysis → Research best practices, save to notes           │
-│  4. Design → Propose architecture, save to notes                │
-│  5. Synthesize → Read notes, write PRD, update plan             │
-│  6. Validate → Review with user, finalize                       │
+│  4. Design → Propose architecture options (A/B/C), save to notes │
+│  5. PRD → Write product requirements to {feature}-prd.md        │
+│  6. Tech → Write technical design to {feature}-tech.md          │
+│  7. Validate → Review with user, finalize                       │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
                     ↓
@@ -77,7 +80,7 @@ docs/{feature-name}-prd.md → Final PRD document
 
 ## Step 1: Initialize
 
-Create the three files with templates:
+Create the four files with templates:
 
 ### prd-task-plan.md
 
@@ -85,7 +88,7 @@ Create the three files with templates:
 # PRD Task Plan: {Feature Name}
 
 ## Goal
-Create a comprehensive PRD for {feature description}.
+Create a PRD and technical design for {feature description}.
 
 ## Owner
 {User name/role}
@@ -96,7 +99,8 @@ Create a comprehensive PRD for {feature description}.
 - [ ] Phase 3: Research & analysis
 - [ ] Phase 4: Design solution
 - [ ] Phase 5: Write PRD
-- [ ] Phase 6: Validate & finalize
+- [ ] Phase 6: Write technical design
+- [ ] Phase 7: Validate & finalize
 
 ## Status
 **Currently in Phase 2** - Gathering requirements from user
@@ -119,8 +123,21 @@ Create a comprehensive PRD for {feature description}.
 ## Research Findings
 (Add research on best practices, similar solutions)
 
-## Architecture Ideas
-(Add design ideas, trade-offs)
+## Architecture Options
+
+- Option A: {Description}
+  - Pros: {Advantages}
+  - Cons: {Disadvantages}
+
+- Option B: {Description}
+  - Pros: {Advantages}
+  - Cons: {Disadvantages}
+
+- Option C: {Description}
+  - Pros: {Advantages}
+  - Cons: {Disadvantages}
+
+**Selected**: Option {X}
 
 ## Open Questions
 (Track questions to ask user)
@@ -131,13 +148,16 @@ Create a comprehensive PRD for {feature description}.
 ```markdown
 # PRD: {Feature Name}
 
-> Status: DRAFT - Last updated: {timestamp}
+> Status: DRAFT
+> Last updated: {timestamp}
 
 ## Table of Contents
 - [Problem Statement](#problem-statement)
+- [Goals and Non-Goals](#goals-and-non-goals)
 - [Success Criteria](#success-criteria)
+- [Scope](#scope)
 - [Requirements](#requirements)
-- [Architecture](#architecture)
+- [User Flows](#user-flows)
 - [Implementation Plan](#implementation-plan)
 
 ---
@@ -145,10 +165,51 @@ Create a comprehensive PRD for {feature description}.
 ## Problem Statement
 _To be filled after requirements gathering_
 
+## Goals and Non-Goals
+### Goals
+- {Specific achievable outcomes}
+
+### Non-Goals
+- {Explicit exclusions}
+
 ## Success Criteria
-_To be filled after requirements gathering_
+_To be filled with measurable criteria_
+
+## Scope
+### In Scope
+- {Specific items included}
+
+### Out of Scope
+- {Specific items excluded}
 
 ... (rest of PRD sections)
+```
+
+### {feature}-tech.md
+
+```markdown
+# Technical Design: {Feature Name}
+
+> Status: DRAFT
+> Last updated: {timestamp}
+
+## Overview
+{High-level technical approach}
+
+## Key Components
+{List major components and their responsibilities}
+
+## API Design
+{API signatures, request/response formats}
+
+## Data Flow
+{How data flows through the system}
+
+## Implementation Details
+{Specific implementation notes}
+
+## Migration Plan
+{If applicable, how to migrate from existing system}
 ```
 
 ## Step 2: Gather Requirements
@@ -191,12 +252,19 @@ Propose architecture with trade-offs, save to `prd-notes.md`:
 ```markdown
 ## Architecture Options
 
-| Option | Description | Pros | Cons |
-|--------|-------------|------|------|
-| A | ... | ... | ... |
-| B | ... | ... | ... |
+- Option A: {Description}
+  - Pros: {Advantages}
+  - Cons: {Disadvantages}
 
-**Selected**: Option A - because ...
+- Option B: {Description}
+  - Pros: {Advantages}
+  - Cons: {Disadvantages}
+
+- Option C: {Description}
+  - Pros: {Advantages}
+  - Cons: {Disadvantages}
+
+**Selected**: Option {X} - because {reason}
 ```
 
 ## Step 5: Write PRD
@@ -207,26 +275,42 @@ Read `prd-notes.md` and synthesize into polished PRD:
 1. Read prd-notes.md to understand:
    - Requirements gathered
    - Research findings
-   - Architecture decisions
-   - Trade-offs considered
+   - Architecture decision (which option was selected)
 
 2. Write {feature}-prd.md with:
    - Clear problem statement
-   - Measurable success criteria
+   - Goals and Non-Goals (explicit exclusions)
+   - Measurable success criteria (specific numbers/timings)
+   - Scope (In Scope / Out of Scope)
    - Functional requirements
    - Non-functional requirements
-   - Architecture design
-   - Implementation phases
-   - Testing approach
+   - User flows
+   - Implementation plan (high level)
+
+3. Reference tech doc: "See {feature}-tech.md for technical design"
 ```
 
-## Step 6: Validate & Finalize
+## Step 6: Write Technical Design
+
+```markdown
+1. Read prd-notes.md for selected architecture option
+
+2. Write {feature}-tech.md with:
+   - Overview (technical approach summary)
+   - Key Components (what pieces, responsibilities)
+   - API Design (signatures, contracts)
+   - Data Flow (how data moves through system)
+   - Implementation Details (specific notes)
+   - Migration Plan (if applicable)
+```
+
+## Step 7: Validate & Finalize
 
 Review with user:
 1. Present PRD summary
 2. Ask for feedback
 3. Incorporate changes
-4. Mark Phase 6 complete
+4. Mark Phase 7 complete
 
 ## Important Rules
 
@@ -245,10 +329,20 @@ Review with user:
 ❌ **Bad**: Make design decisions from memory
 ✅ **Good**: Read prd-notes.md first, then decide
 
+### ALWAYS Separate PRD and Tech Doc
+
+❌ **Bad**: Mix product requirements with implementation details in one file
+✅ **Good**: PRD for "what & why", Tech doc for "how"
+
 ### NEVER Skip The Planning Files
 
 ❌ **Bad**: "Quick PRD" - skip straight to writing
-✅ **Good**: Even for quick PRDs, create the 3 files (it prevents rework)
+✅ **Good**: Even for quick PRDs, create the 4 files (it prevents rework)
+
+### ALWAYS Include Architecture Options (A/B/C)
+
+❌ **Bad**: Jump straight to chosen solution without alternatives
+✅ **Good**: Document 2-3 options with pros/cons, explain selection
 
 ## Phase Transitions
 
@@ -278,21 +372,23 @@ When all phases are done:
 - [x] Phase 3: Research & analysis ✓
 - [x] Phase 4: Design solution ✓
 - [x] Phase 5: Write PRD ✓
-- [x] Phase 6: Validate & finalize ✓
+- [x] Phase 6: Write technical design ✓
+- [x] Phase 7: Validate & finalize ✓
 
 ## Status
-✅ **COMPLETE** - PRD delivered to {location}
+✅ **COMPLETE** - PRD delivered to docs/{feature}-prd.md, Tech doc at docs/{feature}-tech.md
 
 ## Progress Log
 - {timestamp} - PRD complete: docs/{feature}-prd.md
+- {timestamp} - Tech doc complete: docs/{feature}-tech.md
 ```
 
 ## File Cleanup (Optional)
 
 After PRD is complete:
-- Keep `prd-notes.md` for reference
+- Keep `prd-notes.md` for reference (shows decision process)
 - Archive `prd-task-plan.md` or delete
-- Final PRD is `{feature}-prd.md`
+- Final outputs are `{feature}-prd.md` and `{feature}-tech.md`
 
 ## Quick Start Template
 
@@ -300,14 +396,15 @@ After PRD is complete:
 # PRD Task Plan: {Feature}
 
 ## Goal
-Create PRD for {description}
+Create PRD and technical design for {description}
 
 ## Phases
-- [ ] Initialize 3 files
+- [ ] Initialize 4 files
 - [ ] Gather requirements
 - [ ] Research & analysis
-- [ ] Design solution
+- [ ] Design solution (A/B/C options)
 - [ ] Write PRD
+- [ ] Write technical design
 - [ ] Validate & finalize
 
 ## Status
@@ -323,6 +420,8 @@ Phase 1: Initializing files
 | Inconsistent PRDs | Same process, same structure |
 | "Left brain vs right brain" | One coherent workflow |
 | Re-explaining context | Files contain full context |
+| Mixed concerns | PRD (product) separate from Tech (implementation) |
+| Hidden decisions | Architecture options A/B/C documented |
 
 ## References
 
@@ -360,7 +459,7 @@ prd-planner complete
 
 ### Implementation
 
-After completing Phase 6, the skill should:
+After completing Phase 7, the skill should:
 
 1. **Check completion** - Verify all checkboxes are marked
 2. **Update status** - Set task plan status to "COMPLETE"
@@ -370,7 +469,9 @@ After completing Phase 6, the skill should:
 ```markdown
 ## PRD Complete ✅
 
-All phases completed. PRD delivered to: docs/{feature}-prd.md
+All phases completed. Deliverables:
+- docs/{feature}-prd.md (product requirements)
+- docs/{feature}-tech.md (technical design)
 
 ### Auto-Triggered:
 
