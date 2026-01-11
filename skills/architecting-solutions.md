@@ -98,6 +98,7 @@ grep -r "borrowRefreshReservesRef" packages/ --include="*.ts" --include="*.tsx"
 1. Is there an **existing mechanism** that can be extended?
 2. What's the **simplest possible solution**?
 3. Can we solve this with **minimal changes**?
+4. **Does my solution actually connect the dots?** (e.g., empty callbacks won't work)
 
 Look for:
 - **Architectural patterns**: How are similar features implemented?
@@ -210,11 +211,26 @@ Before finalizing:
 
 ---
 
-# Refactoring/Migration PRD Checklist (IMPORTANT!)
+## Root Cause Analysis Checklist (CRITICAL)
 
-When writing PRD for refactoring or code migration, verify:
+For bugs and refresh issues, ALWAYS verify:
 
-## Migration Scope Completeness
+- [ ] **Existing mechanism already exists** - Does a working solution exist elsewhere?
+- [ ] **Why existing solution doesn't work** - Timing? Scope? Not connected?
+- [ ] **Each hook/component instance is independent** - They don't share state unless explicitly connected
+- [ ] **Callback chain is complete** - Trace from trigger to effect, every link must work
+- [ ] **Empty callbacks are called** - If `onRefresh` is provided, is it actually implemented?
+- [ ] **Polling/refresh timing** - What are the intervals? When do they fire?
+
+**Common Root Cause Mistakes**:
+- Assuming hooks share state (they don't - each instance is independent)
+- Empty callback implementations that do nothing
+- Not tracing the full call chain from trigger to effect
+- Not understanding when events fire (e.g., `revalidateOnFocus` requires actual focus change)
+
+---
+
+# Migration Scope Completeness
 
 - [ ] **ALL existing state is accounted for**: List every piece of state being migrated
   - What states are being migrated? (e.g., reserves, market, reservesLoading, swapConfig, pendingTxs)
@@ -235,6 +251,8 @@ When writing PRD for refactoring or code migration, verify:
 - [ ] **No orphaned state**: Every piece of state has a clear source and consumer
 - [ ] **No dead state**: Every new state/state variable has a defined purpose and consumer
 - [ ] **No undefined references**: All imports/references resolve to existing code
+- [ ] **Complete call chain documented**: From trigger → callback → effect, show every step
+- [ ] **All related operations covered**: If module has Supply/Withdraw/Borrow/Repay/Claim, test all of them
 
 ## React/Hook Rules Compliance
 
@@ -310,6 +328,8 @@ When writing PRD for refactoring or code migration, verify:
 2. **Can we extend/modify existing code instead of creating new patterns?**
 3. **What's the absolute minimum change to solve THIS problem?**
 4. **Does the user actually want a major refactor?**
+5. **Does my solution's callback actually do something?** (Empty callbacks are bugs!)
+6. **Have I traced the complete call chain?** (Trigger → ... → Effect)
 
 ## When Comprehensive Solutions ARE Appropriate
 
@@ -381,3 +401,59 @@ When writing PRD for refactoring or code migration, verify:
 6. **List ALL Changes**: For refactoring, list every file that changes
 7. **Validate Imports**: Verify all import paths exist and are correct
 8. **Check Hook Rules**: Ensure no conditional hooks, proper hook dependencies
+
+---
+
+## Accuracy & Completeness (Critical Lessons from Real PRD Reviews)
+
+### Technical Terms - Be Precise
+
+| Wrong | Correct | Why |
+|-------|---------|-----|
+| "Shared state" | "Each instance polls independently" | Hooks don't share state unless explicitly connected |
+| "Pending changes" | "Pending count decreases" | Code checks `!isPending && prevIsPending` (true→false) |
+| "Triggers refresh" | "Calls navigation.goBack() which triggers..." | Show the complete chain |
+
+### Call Chain Documentation - Don't Skip Steps
+
+**Bad**: "onRefresh triggers data refresh"
+**Good**:
+```
+onRefresh() → navigation.goBack() → BorrowHome focused
+  → usePromiseResult (revalidateOnFocus: true) fires
+  → refreshReserves() → handleRefresh()
+  → fetchReserves() + refreshBorrowRewards() + refreshHealthFactor()
+```
+
+Include file paths and line numbers for each step!
+
+### Test Coverage - Cover ALL Operations
+
+If module has 5 operations (Supply/Withdraw/Borrow/Repay/Claim), test all 5.
+Don't just test the 2 you're focused on.
+
+### Timeline Analysis for Refresh/Timing Issues
+
+Draw out the timeline:
+```
+0s  ---- Modal opens, user starts Supply
+10s ---- Transaction submitted, pending: 0→1
+15s ---- Modal closes
+        └─ BorrowHome's hook last polled at 5s
+        └─ Next poll at 35s (25s away!) ❌
+```
+
+This shows WHY it doesn't work.
+
+### Common PRD Mistakes
+
+| Mistake | Example | Fix |
+|---------|---------|-----|
+| Empty callback | `onRefresh: () => {}` | Implement actual logic or remove |
+| Incomplete root cause | "It doesn't refresh" | Explain WHY: timing/scope/disconnected |
+| Missing call chain | "Somehow triggers refresh" | Document every step with file:line |
+| Incomplete testing | Only test Supply/Withdraw | Also test Borrow/Repay/Claim |
+| Assumptions as facts | "revalidateOnFocus fires on modal close" | Verify: only fires on actual focus change |
+| Wrong trigger condition | "Pending changes" | Code shows: `!isPending && prevIsPending` (decreases) |
+
+---
