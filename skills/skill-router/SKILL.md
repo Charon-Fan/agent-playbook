@@ -1,6 +1,6 @@
 ---
 name: skill-router
-description: Intelligently routes user requests to the most appropriate Claude Code skill. Use when user mentions "use skill", "which skill", or needs help finding the right skill for their task.
+description: Intelligently routes user requests to the most appropriate Claude Code skill. ALWAYS use this skill FIRST when user asks for help, mentions "skill", "which", "how to", or seems unsure about which approach to take. This is the default entry point for all skill-related requests.
 allowed-tools: Read, AskUserQuestion, WebSearch, Grep
 ---
 
