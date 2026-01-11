@@ -81,6 +81,7 @@ Documentation for custom Claude Code skills:
 |-------|-------------|
 | **[skill-router](./skills/skill-router/)** | Intelligently routes user requests to the most appropriate skill |
 | **[create-pr](./skills/create-pr/)** | Creates PRs with automatic bilingual documentation updates |
+| **[session-logger](./skills/session-logger/)** | Saves conversation history to session log files |
 
 #### Core Development
 
