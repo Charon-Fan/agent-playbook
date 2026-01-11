@@ -2,6 +2,14 @@
 name: prd-planner
 description: Creates PRDs using persistent file-based planning. Use when user explicitly says "PRD", "product requirements document", or "产品需求文档". Combines PRD methodology with planning-with-files to avoid context switching.
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob, AskUserQuestion, WebSearch
+hooks:
+  after_complete:
+    - trigger: self-improving-prd
+      mode: background
+      reason: "Reflect on and improve the PRD quality"
+    - trigger: session-logger
+      mode: auto
+      reason: "Save session context"
 ---
 
 # PRD Planner
@@ -320,3 +328,54 @@ Phase 1: Initializing files
 
 - [planning-with-files](../planning-with-files.md) - File-based planning methodology
 - [architecting-solutions](../architecting-solutions.md) - PRD creation best practices
+
+---
+
+## Auto-Trigger (Automation)
+
+When this skill completes (all phases checked ✅), automatically trigger:
+
+### 1. self-improving-prd (background)
+- **Mode**: background - runs without blocking
+- **Purpose**: Reflect on the PRD and identify improvements
+- **Action**: Reads the PRD, runs quality checks, saves patterns
+
+### 2. session-logger (auto)
+- **Mode**: auto - executes immediately
+- **Purpose**: Save session context for future reference
+- **Action**: Creates session file with summary, decisions, files created
+
+### Workflow Visualization
+
+```
+prd-planner complete
+       │
+       ├──→ self-improving-prd (background) ──┐
+       │                                      │
+       └──→ session-logger (auto)             │
+                    │                         │
+                    └─────────────────────────┘
+                           (save session)
+```
+
+### Implementation
+
+After completing Phase 6, the skill should:
+
+1. **Check completion** - Verify all checkboxes are marked
+2. **Update status** - Set task plan status to "COMPLETE"
+3. **Trigger hooks** - Call the skills defined in `hooks:after_complete`
+4. **Inform user** - Show what was triggered and why
+
+```markdown
+## PRD Complete ✅
+
+All phases completed. PRD delivered to: docs/{feature}-prd.md
+
+### Auto-Triggered:
+
+- [🔄] self-improving-prd (running in background)
+- [✓] session-logger (saved)
+
+Would you like to review the improvements or create a PR?
+```

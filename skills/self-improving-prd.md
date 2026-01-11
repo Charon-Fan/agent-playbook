@@ -2,6 +2,15 @@
 name: self-improving-prd
 description: A self-improving agent that uses reflection loops and multi-evaluator feedback to continuously optimize PRD generation quality.
 allowed-tools: Read, Write, Edit, Bash, AskUserQuestion, WebSearch
+hooks:
+  after_complete:
+    - trigger: create-pr
+      mode: ask_first
+      condition: skill_files_modified
+      reason: "Submit improvements to repository"
+    - trigger: session-logger
+      mode: auto
+      reason: "Save improvement session"
 ---
 
 # Self-Improving PRD Agent
