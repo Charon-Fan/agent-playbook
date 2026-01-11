@@ -1,3 +1,9 @@
+---
+name: architecting-solutions
+description: Analyzes requirements and creates detailed PRD documents for software implementation. Use this skill when the user mentions PRD, solution design, requirements analysis, feature specification, or needs to document technical plans.
+allowed-tools: Read, Write, Edit, Bash, AskUserQuestion, WebSearch
+---
+
 # Architecting Solutions
 
 Analyzes requirements and creates detailed PRD documents for software implementation.
