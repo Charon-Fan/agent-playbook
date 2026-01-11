@@ -1,3 +1,9 @@
+---
+name: planning-with-files
+description: Uses persistent markdown files for planning, progress tracking, and knowledge storage (Manus-style workflow). Use this skill for multi-step tasks, research, or projects requiring organization.
+allowed-tools: Read, Write, Edit, Bash, Grep, Glob
+---
+
 # Planning with Files
 
 > "Work like Manus" — Uses persistent markdown files for planning, progress tracking, and knowledge storage.
