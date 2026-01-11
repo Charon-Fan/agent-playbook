@@ -116,8 +116,9 @@ Claude Code 自定义技能文档：
 
 | 技能 | 描述 |
 |------|------|
-| **[architecting-solutions](./skills/architecting-solutions.md)** | PRD 创建和需求分析 |
-| **[planning-with-files](./skills/planning-with-files.md)** | 基于持久化文件的规划（Manus 风格） |
+| **[prd-planner](./skills/prd-planner/)** | 使用持久化文件规划创建 PRD（避免上下文切换） |
+| **[architecting-solutions](./skills/architecting-solutions.md)** | 技术方案和架构设计（非 PRD 专用） |
+| **[planning-with-files](./skills/planning-with-files.md)** | 通用的多步骤任务文件规划 |
 | **[self-improving-prd](./skills/self-improving-prd.md)** | 带反思循环的自我改进 PRD |
 
 ### [agents/](./agents/)

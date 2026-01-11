@@ -1,6 +1,6 @@
 ---
 name: planning-with-files
-description: Uses persistent markdown files for planning, progress tracking, and knowledge storage (Manus-style workflow). Use this skill for multi-step tasks, research, or projects requiring organization.
+description: Uses persistent markdown files for general planning, progress tracking, and knowledge storage (Manus-style workflow). Use for multi-step tasks, research projects, or general organization WITHOUT mentioning PRD. For PRD-specific work, use prd-planner skill instead.
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
