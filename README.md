@@ -113,8 +113,9 @@ Documentation for custom Claude Code skills:
 
 | Skill | Description |
 |-------|-------------|
-| **[architecting-solutions](./skills/architecting-solutions.md)** | PRD creation and requirement analysis |
-| **[planning-with-files](./skills/planning-with-files.md)** | Persistent file-based planning (Manus-style) |
+| **[prd-planner](./skills/prd-planner/)** | Creates PRDs using persistent file-based planning (avoids context switching) |
+| **[architecting-solutions](./skills/architecting-solutions.md)** | Technical solution and architecture design (not PRD-specific) |
+| **[planning-with-files](./skills/planning-with-files.md)** | General file-based planning for multi-step tasks |
 | **[self-improving-prd](./skills/self-improving-prd.md)** | Self-improving PRD with reflection loops |
 
 ### [agents/](./agents/)
