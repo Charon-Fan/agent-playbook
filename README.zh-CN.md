@@ -84,6 +84,7 @@ Claude Code 自定义技能文档：
 |------|------|
 | **[skill-router](./skills/skill-router/)** | 智能路由，将用户请求引导至最合适的技能 |
 | **[create-pr](./skills/create-pr/)** | 创建 PR 并自动更新中英文文档 |
+| **[session-logger](./skills/session-logger/)** | 保存对话历史到会话日志文件 |
 
 #### 核心开发
 
