@@ -121,7 +121,8 @@ Claude Code 自定义技能文档：
 | **[prd-implementation-precheck](./skills/prd-implementation-precheck/)** | 实现 PRD 前进行预检查 |
 | **[architecting-solutions](./skills/architecting-solutions.md)** | 技术方案和架构设计（非 PRD 专用） |
 | **[planning-with-files](./skills/planning-with-files.md)** | 通用的多步骤任务文件规划 |
-| **[self-improving-prd](./skills/self-improving-prd.md)** | 带反思循环的自我改进 PRD |
+| **[self-improving-agent](./skills/self-improving-agent/)** | 通用自我进化系统，从所有技能经验中学习 |
+| **[self-improving-prd](./skills/self-improving-prd.md)** | 带反思循环的自我改进 PRD（旧版，参见 self-improving-agent） |
 
 ### [agents/](./agents/)
 
