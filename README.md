@@ -171,6 +171,18 @@ prd-implementation-precheck → implementation
 code-reviewer → self-improving-agent → create-pr
 ```
 
+## Complete Workflow Example
+
+**[docs/complete-workflow-example.md](./docs/complete-workflow-example.md)** - 从图片/需求到交付的完整流程演示：
+
+1. **Input** → 上传图片或描述需求
+2. **PRD** → `prd-planner` 创建 PRD（自动触发 `self-improving-agent`）
+3. **Review** → 自我审核和改进
+4. **Implement** → 根据 PRD 编写代码
+5. **Review** → `code-reviewer` 检查质量
+6. **Feedback** → `self-improving-agent` 从经验中学习
+7. **Submit** → `create-pr` 提交并同步中英文 README
+
 ## Updating Skills
 
 When you update skills in agent-playbook, the symbolic links ensure you always have the latest version. To update:
