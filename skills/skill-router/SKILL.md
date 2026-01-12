@@ -51,7 +51,7 @@ This skill activates when you:
 |-------|----------|
 | `architecting-solutions` | Creating PRDs, solution design, requirements analysis |
 | `planning-with-files` | Multi-step task planning, persistent file-based organization |
-| `self-improving-prd` | PRD generation with reflection loops and quality optimization |
+| `self-improving-agent` | Universal self-improvement that learns from all skill experiences |
 
 ## Routing Process
 

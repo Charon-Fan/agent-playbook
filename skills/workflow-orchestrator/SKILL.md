@@ -34,7 +34,7 @@ This skill should be triggered automatically when:
 │  workflow-orchestrator                                      │
 │       ↓                                                     │
 │  ┌─────────────────────────────────────┐                   │
-│  │ auto-trigger self-improving-prd     │ (background)       │
+│  │ auto-trigger self-improving-agent   │ (background)       │
 │  │ auto-trigger session-logger         │ (auto)            │
 │  └─────────────────────────────────────┘                   │
 │                                                             │
@@ -46,11 +46,15 @@ This skill should be triggered automatically when:
 Read trigger definitions from `skills/auto-trigger/SKILL.md`:
 
 ```yaml
-prd_complete:
-  - trigger: self-improving-prd
-    mode: background
-  - trigger: session-logger
-    mode: auto
+hooks:
+  after_complete:
+    - trigger: self-improving-agent
+      mode: background
+    - trigger: session-logger
+      mode: auto
+  on_error:
+    - trigger: self-improving-agent
+      mode: background
 ```
 
 ## Execution Modes
@@ -72,7 +76,7 @@ Detected when:
 - Status shows "COMPLETE"
 
 Actions:
-1. Trigger self-improving-prd (background)
+1. Trigger self-improving-agent (background)
 2. Trigger session-logger (auto)
 ```
 
@@ -122,6 +126,17 @@ The self-improving-agent:
 - Consolidates memory for future reference
 ```
 
+## Error Handling (on_error)
+
+Detected when:
+- A command returns non-zero exit code
+- Tests fail after following skill guidance
+- User reports the guidance produced incorrect results
+
+Actions:
+1. Trigger self-improving-agent (background) for self-correction
+2. Trigger session-logger (auto) to capture error context
+
 ## Hook Implementation in Skills
 
 To enable auto-trigger, add this section to any skill's SKILL.md:
@@ -132,9 +147,14 @@ To enable auto-trigger, add this section to any skill's SKILL.md:
 When this skill completes, automatically trigger:
 
 ```yaml
-- trigger: skill-name
-  mode: auto|background|ask_first
-  context: "relevant context"
+hooks:
+  after_complete:
+    - trigger: skill-name
+      mode: auto|background|ask_first
+      context: "relevant context"
+  on_error:
+    - trigger: self-improving-agent
+      mode: background
 ```
 
 ### Current Skill Hooks
@@ -238,7 +258,7 @@ cat skills/auto-trigger/SKILL.md
 
 ### Step 3: Execute Hooks
 
-For each hook in order:
+For each hook in order (before_start, after_complete, on_error):
 1. Check if condition is met
 2. Execute based on mode
 3. Pass context to triggered skill
@@ -251,7 +271,7 @@ Log what was triggered and the result:
 ```markdown
 ## Workflow Execution
 
-- [x] self-improving-prd (background) - Started
+- [x] self-improving-agent (background) - Started
 - [x] session-logger (auto) - Session saved
 - [ ] create-pr (ask_first) - Pending user approval
 ```
@@ -260,13 +280,13 @@ Log what was triggered and the result:
 
 | Skill | Triggers After |
 |-------|----------------|
-| `prd-planner` | self-improving-prd, session-logger |
-| `self-improving-prd` | create-pr, session-logger |
+| `prd-planner` | self-improving-agent, session-logger |
+| `self-improving-agent` | create-pr, session-logger |
 | `prd-implementation-precheck` | code-reviewer, session-logger |
-| `code-reviewer` | session-logger |
+| `code-reviewer` | self-improving-agent, session-logger |
 | `create-pr` | session-logger |
-| `refactoring-specialist` | session-logger |
-| `debugger` | session-logger |
+| `refactoring-specialist` | self-improving-agent, session-logger |
+| `debugger` | self-improving-agent, session-logger |
 
 ## Adding Auto-Trigger to Existing Skills
 
@@ -279,7 +299,13 @@ To add auto-trigger capability to an existing skill, add to the end of its SKILL
 
 When this skill completes, automatically trigger:
 
-- `session-logger` (auto) - Save session context
+```yaml
+hooks:
+  after_complete:
+    - trigger: session-logger
+      mode: auto
+      context: "Save session context"
+```
 ```
 
 For more complex triggers, specify mode and context:
@@ -289,9 +315,22 @@ For more complex triggers, specify mode and context:
 
 When this skill completes:
 
-- `next-skill` (background) - Description
-- `session-logger` (auto) - Save session
-- `create-pr` (ask_first) - Create PR if files modified
+```yaml
+hooks:
+  after_complete:
+    - trigger: next-skill
+      mode: background
+      context: "Description"
+    - trigger: session-logger
+      mode: auto
+      context: "Save session"
+    - trigger: create-pr
+      mode: ask_first
+      context: "Create PR if files modified"
+  on_error:
+    - trigger: self-improving-agent
+      mode: background
+```
 ```
 
 ## Best Practices

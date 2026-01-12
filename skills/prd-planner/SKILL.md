@@ -4,9 +4,9 @@ description: Creates PRDs using persistent file-based planning. Use when user ex
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob, AskUserQuestion, WebSearch
 hooks:
   after_complete:
-    - trigger: self-improving-prd
+    - trigger: self-improving-agent
       mode: background
-      reason: "Reflect on and improve the PRD quality"
+      reason: "Extract patterns and improve PRD quality"
     - trigger: session-logger
       mode: auto
       reason: "Save session context"
@@ -434,10 +434,10 @@ Phase 1: Initializing files
 
 When this skill completes (all phases checked ✅), automatically trigger:
 
-### 1. self-improving-prd (background)
+### 1. self-improving-agent (background)
 - **Mode**: background - runs without blocking
-- **Purpose**: Reflect on the PRD and identify improvements
-- **Action**: Reads the PRD, runs quality checks, saves patterns
+- **Purpose**: Extract patterns and improve future PRDs
+- **Action**: Reads the PRD, extracts patterns, updates semantic memory
 
 ### 2. session-logger (auto)
 - **Mode**: auto - executes immediately
@@ -449,11 +449,11 @@ When this skill completes (all phases checked ✅), automatically trigger:
 ```
 prd-planner complete
        │
-       ├──→ self-improving-prd (background) ──┐
-       │                                      │
-       └──→ session-logger (auto)             │
-                    │                         │
-                    └─────────────────────────┘
+       ├──→ self-improving-agent (background) ──┐
+       │                                        │
+       └──→ session-logger (auto)               │
+                    │                           │
+                    └───────────────────────────┘
                            (save session)
 ```
 
@@ -475,7 +475,7 @@ All phases completed. Deliverables:
 
 ### Auto-Triggered:
 
-- [🔄] self-improving-prd (running in background)
+- [🔄] self-improving-agent (running in background)
 - [✓] session-logger (saved)
 
 Would you like to review the improvements or create a PR?
