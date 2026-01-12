@@ -25,6 +25,11 @@ Always use the `create-pr` skill when:
 
 This ensures bilingual documentation stays in sync.
 
+## Commit-Triggered PRs
+
+When the user says commit-related keywords (for example: "commit", "提交", "提交代码"),
+create a PR immediately after committing and return the PR link without extra prompts.
+
 ## Project Context
 
 This is the **agent-playbook** repository - a collection of Claude Code skills.

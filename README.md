@@ -16,16 +16,16 @@ Link the skills to your global Claude Code skills directory:
 
 ```bash
 # Create symbolic links for each skill
-ln -s /path/to/agent-playbook/skills/*.md ~/.claude/skills/
+ln -s /path/to/agent-playbook/skills/* ~/.claude/skills/
 ```
 
 Example:
 
 ```bash
 # Link individual skills
-ln -s ~/Documents/code/GitHub/agent-playbook/skills/skill-router/SKILL.md ~/.claude/skills/skill-router.md
-ln -s ~/Documents/code/GitHub/agent-playbook/skills/architecting-solutions.md ~/.claude/skills/
-ln -s ~/Documents/code/GitHub/agent-playbook/skills/planning-with-files.md ~/.claude/skills/
+ln -s ~/Documents/code/GitHub/agent-playbook/skills/skill-router ~/.claude/skills/skill-router
+ln -s ~/Documents/code/GitHub/agent-playbook/skills/architecting-solutions ~/.claude/skills/architecting-solutions
+ln -s ~/Documents/code/GitHub/agent-playbook/skills/planning-with-files ~/.claude/skills/planning-with-files
 ```
 
 ### Method 2: Copy Skills
@@ -110,8 +110,8 @@ agent-playbook/
 |-------|-------------|--------------|
 | **[prd-planner](./skills/prd-planner/)** | Creates PRDs using persistent file-based planning | Manual (keyword: "PRD") |
 | **[prd-implementation-precheck](./skills/prd-implementation-precheck/)** | Performs preflight review before implementing PRDs | Manual |
-| **[architecting-solutions](./skills/architecting-solutions.md)** | Technical solution and architecture design | Manual (keyword: "design solution") |
-| **[planning-with-files](./skills/planning-with-files.md)** | General file-based planning for multi-step tasks | Manual |
+| **[architecting-solutions](./skills/architecting-solutions/)** | Technical solution and architecture design | Manual (keyword: "design solution") |
+| **[planning-with-files](./skills/planning-with-files/)** | General file-based planning for multi-step tasks | Manual |
 
 ### Design & Creative
 
@@ -226,6 +226,8 @@ When contributing skills:
 2. Include `SKILL.md` with proper front matter (name, description, allowed-tools, hooks)
 3. Add `README.md` with usage examples
 4. Update both README.md and README.zh-CN.md
+5. Validate skill structure: `python3 scripts/validate_skills.py`
+6. Optional: run skills-ref validation: `python3 -m pip install "git+https://github.com/agentskills/agentskills.git@main#subdirectory=skills-ref" && skills-ref validate skills/<name>`
 
 ## License
 

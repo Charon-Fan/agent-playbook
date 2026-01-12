@@ -16,16 +16,16 @@
 
 ```bash
 # 为每个技能创建符号链接
-ln -s /path/to/agent-playbook/skills/*.md ~/.claude/skills/
+ln -s /path/to/agent-playbook/skills/* ~/.claude/skills/
 ```
 
 示例：
 
 ```bash
 # 链接单个技能
-ln -s ~/Documents/code/GitHub/agent-playbook/skills/skill-router/SKILL.md ~/.claude/skills/skill-router.md
-ln -s ~/Documents/code/GitHub/agent-playbook/skills/architecting-solutions.md ~/.claude/skills/
-ln -s ~/Documents/code/GitHub/agent-playbook/skills/planning-with-files.md ~/.claude/skills/
+ln -s ~/Documents/code/GitHub/agent-playbook/skills/skill-router ~/.claude/skills/skill-router
+ln -s ~/Documents/code/GitHub/agent-playbook/skills/architecting-solutions ~/.claude/skills/architecting-solutions
+ln -s ~/Documents/code/GitHub/agent-playbook/skills/planning-with-files ~/.claude/skills/planning-with-files
 ```
 
 ### 方法二：复制技能
@@ -110,8 +110,8 @@ agent-playbook/
 |------|------|----------|
 | **[prd-planner](./skills/prd-planner/)** | 使用持久化文件规划创建 PRD | 手动（关键词："PRD"） |
 | **[prd-implementation-precheck](./skills/prd-implementation-precheck/)** | 实现 PRD 前进行预检查 | 手动 |
-| **[architecting-solutions](./skills/architecting-solutions.md)** | 技术方案和架构设计 | 手动（关键词："design solution"） |
-| **[planning-with-files](./skills/planning-with-files.md)** | 通用的多步骤任务文件规划 | 手动 |
+| **[architecting-solutions](./skills/architecting-solutions/)** | 技术方案和架构设计 | 手动（关键词："design solution"） |
+| **[planning-with-files](./skills/planning-with-files/)** | 通用的多步骤任务文件规划 | 手动 |
 
 ### 设计与创意
 
@@ -226,6 +226,8 @@ cp -r /path/to/agent-playbook/skills/* ~/.claude/skills/
 2. 包含 `SKILL.md` 文件，格式正确（name, description, allowed-tools, hooks）
 3. 添加 `README.md` 包含使用示例
 4. 同时更新 README.md 和 README.zh-CN.md
+5. 验证技能结构：`python3 scripts/validate_skills.py`
+6. 可选：运行 skills-ref 校验：`python3 -m pip install "git+https://github.com/agentskills/agentskills.git@main#subdirectory=skills-ref" && skills-ref validate skills/<name>`
 
 ## 许可证
 

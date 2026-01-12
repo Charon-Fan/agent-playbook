@@ -313,28 +313,7 @@ Triggered when:
 
 ## Self-Validation
 
-Periodically validate skill content:
-
-```markdown
-## Validation Report Template
-
-**Date**: [YYYY-MM-DD]
-**Scope**: [skill(s) validated]
-
-### Checks
-- [ ] Examples compile or run
-- [ ] Checklists match current repo conventions
-- [ ] External references still valid
-- [ ] No duplicated or conflicting guidance
-
-### Findings
-- [Finding 1]
-- [Finding 2]
-
-### Actions
-- [Action 1]
-- [Action 2]
-```
+Use the validation template in `references/appendix.md` when reviewing updates.
 
 ## Hooks Integration
 
@@ -384,136 +363,9 @@ Add to Claude Code settings (`~/.claude/settings.json`):
 
 Replace `${SKILLS_DIR}` with your actual skills path.
 
-## Memory File Structure
+## Additional References
 
-```
-~/.claude/memory/
-├── semantic/
-│   └── patterns.json          # All learned patterns (included in repo)
-├── episodic/
-│   ├── 2025/
-│   │   ├── 2025-01-11-prd-creation.json
-│   │   └── 2025-01-11-debug-session.json
-│   └── episodes.json          # Index of all episodes
-├── working/
-│   ├── current_session.json   # Current context
-│   ├── last_error.json        # Error context for self-correction
-│   └── session_end.json       # Session end marker
-└── index.json                 # Memory index and metadata
-```
-
-## Automatic Workflow Integration
-
-```
-┌─────────────────────┐
-│   Any Skill Run     │
-└──────────┬──────────┘
-           │
-           ▼
-┌─────────────────────┐     ┌──────────────────────┐
-│  Skill Completes    │────→│ workflow-orchestrator │
-│  or Error Occurs    │     └──────────┬───────────┘
-└─────────────────────┘                │
-           │                           ▼
-           │              ┌──────────────────────────┐
-           │              │  self-improving-agent    │
-           │              │  (background)            │
-           │              └──────────┬───────────────┘
-           │                         │
-           │              ┌──────────▼───────────────┐
-           │              │  1. Extract experience   │
-           │              │  2. Identify patterns    │
-           │              │  3. Update skills        │
-           │              │  4. Consolidate memory   │
-           │              └──────────┬───────────────┘
-           │                         │
-           ▼                         ▼
-┌─────────────────────┐     ┌──────────────────────┐
-│  create-pr          │←────│  Skills Modified?     │
-│  (ask_first)        │     └──────────────────────┘
-└─────────────────────┘
-           │
-           ▼
-┌─────────────────────┐
-│  session-logger     │
-│  (auto)             │
-└─────────────────────┘
-```
-
-## Continuous Learning Metrics
-
-Track improvement over time:
-
-```json
-{
-  "metrics": {
-    "patterns_learned": 47,
-    "patterns_applied": 238,
-    "skills_updated": 12,
-    "avg_confidence": 0.87,
-    "user_satisfaction_trend": "improving",
-    "error_rate_reduction": "-35%",
-    "self_corrections": 8
-  }
-}
-```
-
-## Human-in-the-Loop
-
-### Feedback Collection
-
-After each improvement cycle:
-
-```markdown
-## Self-Improvement Summary
-
-I've learned from our session and updated:
-
-### Updated Skills
-- `debugger`: Added callback verification pattern
-- `prd-planner`: Enhanced UI/UX specification requirements
-
-### Patterns Extracted
-1. **state_monitoring_over_callbacks**: Use usePrevious for state-driven side effects
-2. **ui_ux_specification_granularity**: Explicit visual specs prevent rework
-
-### Confidence Levels
-- New patterns: 0.85 (needs validation)
-- Reinforced patterns: 0.95 (well-established)
-
-### Your Feedback
-Rate these improvements (1-10):
-- Were the updates helpful?
-- Should I apply this pattern more broadly?
-- Any corrections needed?
-```
-
-### Feedback Integration
-
-```yaml
-User Feedback:
-  positive (rating >= 7):
-    action: Increase pattern confidence
-    scope: Expand to related skills
-
-  neutral (rating 4-6):
-    action: Keep pattern, gather more data
-    scope: Current skill only
-
-  negative (rating <= 3):
-    action: Decrease confidence, revise pattern
-    scope: Remove from active patterns
-```
-
-## Templates
-
-Use these templates when updating skills:
-
-| Template | Purpose |
-|----------|---------|
-| `templates/pattern-template.md` | Adding new patterns |
-| `templates/correction-template.md` | Fixing incorrect guidance |
-| `templates/validation-template.md` | Validating skill accuracy |
+See `references/appendix.md` for memory structure, workflow diagrams, metrics, feedback templates, and research links.
 
 ## Best Practices
 

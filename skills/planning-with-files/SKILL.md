@@ -57,12 +57,13 @@ notes.md          → Store research and findings
 
 This skill is typically installed globally at `~/.claude/skills/planning-with-files/`.
 
-You can install it via:
+From this repository:
 
 ```bash
-cd ~/.claude/skills
-git clone https://github.com/OthmanAdi/planning-with-files.git
+ln -s /path/to/agent-playbook/skills/planning-with-files ~/.claude/skills/planning-with-files
 ```
+
+If you prefer the standalone workflow, see the upstream repository in the Links section.
 
 ## The Manus Principles
 

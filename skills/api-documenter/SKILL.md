@@ -25,7 +25,7 @@ info:
   version: 1.0.0
   description: API description
 servers:
-  - url: https://api.example.com/v1
+  - url: https://example.com/api/v1
 paths:
   /users:
     get:

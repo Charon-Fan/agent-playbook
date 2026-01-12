@@ -1,0 +1,15 @@
+{
+  "config": {
+    "MD013": false,
+    "MD024": false,
+    "MD033": false,
+    "MD041": false
+  },
+  "globs": [
+    "**/*.md"
+  ],
+  "ignores": [
+    "mcp-server/node_modules/**",
+    "sessions/**"
+  ]
+}

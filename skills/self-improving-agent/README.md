@@ -39,7 +39,7 @@ Extract Experience → Identify Patterns → Update Skills → Consolidate Memor
 ## Installation
 
 ```bash
-ln -s ~/path/to/agent-playbook/skills/self-improving-agent/SKILL.md ~/.claude/skills/self-improving-agent.md
+ln -s ~/path/to/agent-playbook/skills/self-improving-agent ~/.claude/skills/self-improving-agent
 ```
 
 ## Hooks (Optional)

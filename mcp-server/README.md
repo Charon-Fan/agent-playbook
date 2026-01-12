@@ -27,8 +27,8 @@ Add to `~/.claude/settings.json`:
   "mcpServers": {
     "agent-playbook": {
       "command": "node",
-      "args": ["/Users/fanzhao/Documents/code/GitHub/agent-playbook/mcp-server/index.js"],
-      "cwd": "/Users/fanzhao/Documents/code/GitHub/agent-playbook/mcp-server"
+      "args": ["/path/to/agent-playbook/mcp-server/index.js"],
+      "cwd": "/path/to/agent-playbook/mcp-server"
     }
   }
 }
