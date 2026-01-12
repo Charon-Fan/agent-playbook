@@ -36,15 +36,36 @@ Identify:
 
 ### Step 2: Determine Documentation Updates
 
-Based on the changes, determine if README updates are needed:
+### Check for Skill Changes
+
+First, detect if any skills were changed:
+
+```bash
+# Check if skills/ directory has changes
+git diff --name-only main..HEAD | grep "^skills/"
+```
+
+### Decision Matrix
 
 | Change Type | Documentation Action |
 |-------------|---------------------|
 | New skill added | Add to skills table in both EN and CN README |
-| Skill modified | Update description if changed |
+| Skill description changed | Update description in skills table |
 | Skill removed | Remove from skills table |
- | Bug fix | May not need doc update |
-| Feature added | Document in changelog/README |
+| Skill hooks changed | Update Auto-Trigger column in skills table |
+| Internal skill logic only | Skip README update |
+| Bug fix with no user impact | Skip README update |
+
+### Auto-Trigger Changes Require Update
+
+If a skill's `hooks:` front matter was modified, the **Auto-Trigger** column in the Skills Catalog must be updated:
+
+```bash
+# Check if hooks were modified
+git diff main..HEAD -- skills/*/SKILL.md | grep -E "^\+.*hooks:|^\+.*trigger:"
+```
+
+If hooks changed → Update README.md and README.zh-CN.md Auto-Trigger column.
 
 ### Step 3: Draft Commit Message
 
@@ -115,6 +136,38 @@ For significant changes, add to CHANGELOG.md:
 ```
 
 ## Documentation Update Guidelines
+
+### Skills Catalog Update Template
+
+When adding or modifying skills, use this format for the Skills Catalog:
+
+**English (README.md):**
+```markdown
+### Category Name
+
+| Skill | Description | Auto-Trigger |
+|-------|-------------|--------------|
+| **[skill-name](./skills/skill-name/)** | Brief description | Manual / Auto / Background / (keyword: "...") |
+```
+
+**Chinese (README.zh-CN.md):**
+```markdown
+### 类别名称
+
+| 技能 | 描述 | 自动触发 |
+|------|------|----------|
+| **[skill-name](./skills/skill-name/)** | 简短描述 | 手动 / 自动 / 后台 / (关键词："...") |
+```
+
+### Auto-Trigger Column Values
+
+| Value | Meaning | Example |
+|-------|---------|---------|
+| `Manual` | User must invoke | Most development skills |
+| `Auto` | Triggers automatically after any skill | session-logger |
+| `Background` | Runs non-blocking after related skill | self-improving-agent |
+| `After skill updates` | Only triggers when skills are modified | create-pr |
+| `(keyword: "...")` | Activates on specific keyword | prd-planner (keyword: "PRD") |
 
 ### When to Update README
 
