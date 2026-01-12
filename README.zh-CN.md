@@ -113,6 +113,12 @@ agent-playbook/
 | **[architecting-solutions](./skills/architecting-solutions.md)** | 技术方案和架构设计 | 手动（关键词："design solution"） |
 | **[planning-with-files](./skills/planning-with-files.md)** | 通用的多步骤任务文件规划 | 手动 |
 
+### 设计与创意
+
+| 技能 | 描述 | 自动触发 |
+|------|------|----------|
+| **[figma-designer](./skills/figma-designer/)** | 分析 Figma 设计并生成包含视觉规范的实现就绪 PRD | 手动（Figma 链接） |
+
 ## 自动触发机制
 
 技能完成时可以自动触发其他技能，形成工作流：

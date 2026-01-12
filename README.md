@@ -113,6 +113,12 @@ agent-playbook/
 | **[architecting-solutions](./skills/architecting-solutions.md)** | Technical solution and architecture design | Manual (keyword: "design solution") |
 | **[planning-with-files](./skills/planning-with-files.md)** | General file-based planning for multi-step tasks | Manual |
 
+### Design & Creative
+
+| Skill | Description | Auto-Trigger |
+|-------|-------------|--------------|
+| **[figma-designer](./skills/figma-designer/)** | Analyzes Figma designs and generates implementation-ready PRDs with visual specifications | Manual (Figma URL) |
+
 ## How Auto-Triggers Work
 
 Skills can automatically trigger other skills when they complete. This creates workflows:
