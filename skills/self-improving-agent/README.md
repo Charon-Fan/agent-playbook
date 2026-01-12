@@ -4,13 +4,15 @@ A universal self-improvement system that learns from ALL skill experiences and c
 
 ## Overview
 
-Unlike `self-improving-prd` (which only focuses on PRDs), this agent learns from **every skill interaction** to achieve true lifelong learning.
+This agent learns from **every skill interaction** to achieve true lifelong learning. It implements a complete feedback loop with multi-memory architecture, self-correction, and evolution markers.
 
 ## Key Features
 
 - **Multi-Memory Architecture**: Semantic + Episodic + Working memory
 - **Universal Learning**: Learns from ALL skills, not just PRDs
 - **Pattern Extraction**: Converts experiences into reusable patterns
+- **Self-Correction**: Fixes skill guidance when errors occur
+- **Self-Validation**: Periodically verifies skill accuracy
 - **Automatic Updates**: Updates related skills based on learned patterns
 - **Confidence Tracking**: Measures pattern reliability over time
 - **Human-in-the-Loop**: Collects feedback to validate improvements
@@ -38,6 +40,41 @@ Extract Experience → Identify Patterns → Update Skills → Consolidate Memor
 
 ```bash
 ln -s ~/path/to/agent-playbook/skills/self-improving-agent/SKILL.md ~/.claude/skills/self-improving-agent.md
+```
+
+## Hooks (Optional)
+
+Wire hooks to capture errors and session-end signals:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          { "type": "command", "command": "bash ${SKILLS_DIR}/self-improving-agent/hooks/pre-tool.sh \"$TOOL_NAME\" \"$TOOL_INPUT\"" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "bash ${SKILLS_DIR}/self-improving-agent/hooks/post-bash.sh \"$TOOL_OUTPUT\" \"$EXIT_CODE\"" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "bash ${SKILLS_DIR}/self-improving-agent/hooks/session-end.sh" }
+        ]
+      }
+    ]
+  }
+}
 ```
 
 ## Triggering
@@ -81,21 +118,18 @@ passed as props are not empty and actually execute logic.
 **Action**: Added to debugger checklist
 ```
 
-## vs self-improving-prd
-
-| Feature | self-improving-prd | self-improving-agent |
-|---------|---------------------|----------------------|
-| Scope | PRD only | ALL skills |
-| Memory | Single file | Multi-memory system |
-| Learning | Reflection-based | Experience-based |
-| Updates | PRD skills only | Any related skill |
-| Research | PRD quality | General lifelong learning |
-
 ## Research Basis
 
 - [SimpleMem: Efficient Lifelong Memory](https://arxiv.org/html/2601.02553v1)
 - [ACM Memory Mechanisms Survey](https://dl.acm.org/doi/10.1145/3748302)
 - [Lifelong Learning of LLM Agents](https://arxiv.org/html/2501.07278v1)
+
+## Templates
+
+Reusable templates live in `skills/self-improving-agent/templates`:
+- `pattern-template.md`
+- `correction-template.md`
+- `validation-template.md`
 
 ## License
 

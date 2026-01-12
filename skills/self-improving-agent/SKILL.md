@@ -1,14 +1,27 @@
 ---
 name: self-improving-agent
-description: A universal self-improving agent that learns from ALL skill experiences and continuously updates the codebase. Automatically triggers after any skill completes to analyze patterns, extract insights, and update related skills. Use when user says "自我进化", "self-improve", or any skill completes its workflow.
+description: A universal self-improving agent that learns from ALL skill experiences. Uses multi-memory architecture (semantic + episodic + working) to continuously evolve the codebase. Auto-triggers on skill completion/error with hooks-based self-correction.
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob, WebSearch
 hooks:
+  before_start:
+    - trigger: session-logger
+      mode: auto
+      context: "Start {skill_name}"
   after_complete:
     - trigger: create-pr
       mode: ask_first
       condition: skills_modified
+      reason: "Submit improvements to repository"
     - trigger: session-logger
       mode: auto
+      context: "Self-improvement cycle complete"
+  on_error:
+    - trigger: self-improving-agent
+      mode: background
+      context: "Self-correction triggered"
+    - trigger: session-logger
+      mode: auto
+      context: "Error captured for correction"
 ---
 
 # Self-Improving Agent
@@ -17,7 +30,13 @@ hooks:
 
 ## Overview
 
-This is a **universal self-improvement system** that learns from ALL skill experiences, not just PRDs. It implements multi-memory architecture with semantic memory, episodic memory, and working memory to achieve true lifelong learning.
+This is a **universal self-improvement system** that learns from ALL skill experiences, not just PRDs. It implements a complete feedback loop with:
+
+- **Multi-Memory Architecture**: Semantic + Episodic + Working memory
+- **Self-Correction**: Detects and fixes skill guidance errors
+- **Self-Validation**: Periodically verifies skill accuracy
+- **Hooks Integration**: Auto-triggers on skill events (before_start, after_complete, on_error)
+- **Evolution Markers**: Traceable changes with source attribution
 
 ## Research-Based Design
 
@@ -37,15 +56,20 @@ Based on 2025 research:
 │                    UNIVERSAL SELF-IMPROVEMENT                    │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│   Any Skill Used → Extract Experience → Update Memory → Improve  │
+│   Skill Event → Extract Experience → Abstract Pattern → Update  │
 │        │                  │                │         │          │
-│        └──────────────────┴────────────────┴─────────┘          │
-│                                                                 │
+│        ▼                  ▼                ▼         ▼          │
 │   ┌─────────────────────────────────────────────────────┐       │
 │   │              MULTI-MEMORY SYSTEM                      │       │
 │   ├─────────────────────────────────────────────────────┤       │
 │   │  Semantic Memory   │  Episodic Memory  │ Working Memory │  │
 │   │  (Patterns/Rules)  │  (Experiences)    │  (Current)     │  │
+│   │  memory/semantic/  │  memory/episodic/ │  memory/working/│  │
+│   └─────────────────────────────────────────────────────┘       │
+│                                                                 │
+│   ┌─────────────────────────────────────────────────────┐       │
+│   │              FEEDBACK LOOP                            │       │
+│   │  User Feedback → Confidence Update → Pattern Adapt   │       │
 │   └─────────────────────────────────────────────────────┘       │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
@@ -53,81 +77,102 @@ Based on 2025 research:
 
 ## When This Activates
 
-### Automatic Triggers (After ANY skill completes)
-- `prd-planner` → Reflect on PRD quality
-- `code-reviewer` → Extract code review patterns
-- `debugger` → Capture debugging insights
-- `refactoring-specialist` → Learn refactoring patterns
-- `create-pr` → Improve PR descriptions
-- ...ALL skills
+### Automatic Triggers (via hooks)
+
+| Event | Trigger | Action |
+|-------|---------|--------|
+| **before_start** | Any skill starts | Log session start |
+| **after_complete** | Any skill completes | Extract patterns, update skills |
+| **on_error** | Bash returns non-zero exit | Capture error context, trigger self-correction |
 
 ### Manual Triggers
+
 - User says "自我进化", "self-improve", "从经验中学习"
 - User says "分析今天的经验", "总结教训"
 - User asks to improve a specific skill
 
+## Evolution Priority Matrix
+
+Trigger evolution when new reusable knowledge appears:
+
+| Trigger | Target Skill | Priority | Action |
+|---------|--------------|----------|--------|
+| New PRD pattern discovered | prd-planner | High | Add to quality checklist |
+| Architecture tradeoff clarified | architecting-solutions | High | Add to decision patterns |
+| API design rule learned | api-designer | High | Update template |
+| Debugging fix discovered | debugger | High | Add to anti-patterns |
+| Review checklist gap | code-reviewer | High | Add checklist item |
+| Perf/security insight | performance-engineer, security-auditor | High | Add to patterns |
+| UI/UX spec issue | prd-planner, architecting-solutions | High | Add visual spec requirements |
+| React/state pattern | debugger, refactoring-specialist | Medium | Add to patterns |
+| Test strategy improvement | test-automator, qa-expert | Medium | Update approach |
+| CI/deploy fix | deployment-engineer | Medium | Add to troubleshooting |
+
 ## Multi-Memory Architecture
 
-### 1. Semantic Memory (`~/.claude/memory/semantic/`)
+### 1. Semantic Memory (`memory/semantic-patterns.json`)
 
-Stores **patterns, rules, and best practices**:
+Stores **abstract patterns and rules** reusable across contexts:
 
 ```json
 {
   "patterns": {
-    "code_review_security": {
-      "pattern": "Always check for SQL injection in user input handling",
-      "context": "code-reviewer",
+    "pattern_id": {
+      "id": "pat-2025-01-11-001",
+      "name": "Pattern Name",
+      "source": "user_feedback|implementation_review|retrospective",
       "confidence": 0.95,
-      "applications": 23,
-      "last_updated": "2025-01-11"
-    },
-    "prd_success_criteria": {
-      "pattern": "Success criteria must be measurable with specific numbers",
-      "context": "prd-planner",
-      "confidence": 0.90,
-      "applications": 15,
-      "last_updated": "2025-01-10"
+      "applications": 5,
+      "created": "2025-01-11",
+      "category": "prd_structure|react_patterns|async_patterns|...",
+      "pattern": "One-line summary",
+      "problem": "What problem does this solve?",
+      "solution": { ... },
+      "quality_rules": [ ... ],
+      "target_skills": [ ... ]
     }
   }
 }
 ```
 
-### 2. Episodic Memory (`~/.claude/memory/episodic/`)
+### 2. Episodic Memory (`memory/episodic/`)
 
 Stores **specific experiences and what happened**:
 
+```
+memory/episodic/
+├── 2025/
+│   ├── 2025-01-11-prd-creation.json
+│   ├── 2025-01-11-debug-session.json
+│   └── 2025-01-12-refactoring.json
+```
+
 ```json
 {
-  "episodes": [
-    {
-      "id": "ep-2025-01-11-001",
-      "timestamp": "2025-01-11T10:30:00Z",
-      "skill": "debugger",
-      "situation": "User reported data not refreshing after form submission",
-      "root_cause": "Empty callback in onRefresh prop",
-      "solution": "Implement actual refresh logic in callback",
-      "lesson": "Always verify callbacks are not empty functions",
-      "related_pattern": "callback_verification"
-    }
-  ]
+  "id": "ep-2025-01-11-001",
+  "timestamp": "2025-01-11T10:30:00Z",
+  "skill": "debugger",
+  "situation": "User reported data not refreshing after form submission",
+  "root_cause": "Empty callback in onRefresh prop",
+  "solution": "Implement actual refresh logic in callback",
+  "lesson": "Always verify callbacks are not empty functions",
+  "related_pattern": "callback_verification",
+  "user_feedback": {
+    "rating": 8,
+    "comments": "This was exactly the issue"
+  }
 }
 ```
 
-### 3. Working Memory (`~/.claude/memory/working/`)
+### 3. Working Memory (`memory/working/`)
 
 Stores **current session context**:
 
-```json
-{
-  "current_session": {
-    "skills_used": ["prd-planner", "self-improving-agent"],
-    "files_modified": ["docs/feature-prd.md"],
-    "decisions_made": ["Chose Option A for architecture"],
-    "questions_raised": ["Should we use PostgreSQL or MongoDB?"],
-    "timestamp": "2025-01-11T11:00:00Z"
-  }
-}
+```
+memory/working/
+├── current_session.json   # Active session data
+├── last_error.json        # Error context for self-correction
+└── session_end.json       # Session end marker
 ```
 
 ## Self-Improvement Process
@@ -138,19 +183,18 @@ After any skill completes, extract:
 
 ```yaml
 What happened:
-  - Which skill was used?
-  - What was the task?
-  - What went well?
-  - What went wrong?
+  skill_used: {which skill}
+  task: {what was being done}
+  outcome: {success|partial|failure}
 
 Key Insights:
-  - Root cause of any issues
-  - Unexpected patterns discovered
-  - User feedback received
+  what_went_well: [what worked]
+  what_went_wrong: [what didn't work]
+  root_cause: {underlying issue if applicable}
 
-Abstract Pattern:
-  - Convert concrete experience to reusable rule
-  - Determine which skill(s) to update
+User Feedback:
+  rating: {1-10 if provided}
+  comments: {specific feedback}
 ```
 
 ### Phase 2: Pattern Abstraction
@@ -162,132 +206,240 @@ Convert experiences to reusable patterns:
 | "User forgot to save PRD notes" | "Always persist thinking to files" | prd-planner |
 | "Code review missed SQL injection" | "Add security checklist item" | code-reviewer |
 | "Callback was empty, didn't work" | "Verify callback implementations" | debugger |
+| "Net APY position ambiguous" | "UI specs need exact relative positions" | prd-planner |
+
+**Abstraction Rules:**
+
+```yaml
+If experience_repeats 3+ times:
+  pattern_level: critical
+  action: Add to skill's "Critical Mistakes" section
+
+If solution_was_effective:
+  pattern_level: best_practice
+  action: Add to skill's "Best Practices" section
+
+If user_rating >= 7:
+  pattern_level: strength
+  action: Reinforce this approach
+
+If user_rating <= 4:
+  pattern_level: weakness
+  action: Add to "What to Avoid" section
+```
 
 ### Phase 3: Skill Updates
 
-Update the appropriate skill files:
+Update the appropriate skill files with **evolution markers**:
 
 ```markdown
-## Auto-Update (from self-improving-agent)
+<!-- Evolution: 2025-01-12 | source: ep-2025-01-12-001 | skill: debugger -->
 
-### Pattern Added (2025-01-11)
+## Pattern Added (2025-01-12)
+
 **Pattern**: Always verify callbacks are not empty functions
-**Source**: Episode ep-2025-01-11-003
+
+**Source**: Episode ep-2025-01-12-001
+
 **Confidence**: 0.95
 
-### Checklist Updated
+### Updated Checklist
 - [ ] Verify all callbacks have implementations
 - [ ] Test callback execution paths
 ```
 
-### Phase 4: Memory Consolidation
-
-1. **Update semantic memory** with new patterns
-2. **Store episodic memory** of this experience
-3. **Update pattern confidence** based on feedback
-4. **Prune outdated patterns** (low confidence, old)
-
-## Automatic Analysis Framework
-
-### Root Cause Analysis Template
-
-When analyzing any problem:
+**Correction Markers** (when fixing wrong guidance):
 
 ```markdown
-## Problem Analysis
+<!-- Correction: 2025-01-12 | was: "Use callback chain" | reason: caused stale refresh -->
 
-### What Happened
-- Symptom: {what user saw}
-- Skill: {which skill}
-- Context: {what was being done}
+## Corrected Guidance
 
-### Root Cause
-- Direct cause: {immediate reason}
-- Underlying cause: {deeper issue}
-- Pattern: {is this a recurring issue?}
-
-### Solution
-- What fixed it: {actual solution}
-- Could it be prevented: {yes/no, how}
-
-### Pattern to Extract
-- For semantic memory: "{abstract rule}"
-- Target skills: {which skills to update}
-- Priority: {high/medium/low}
+Use direct state monitoring instead of callback chains:
+```typescript
+// ✅ Do: Direct state monitoring
+const prevPendingCount = usePrevious(pendingCount);
+```
 ```
 
-### Pattern Extraction Rules
+### Phase 4: Memory Consolidation
 
-```yaml
-Extraction Rules:
-  - If root_cause repeats 3+ times:
-      pattern_level: critical
-      action: Add to skill's "Critical Mistakes" section
+1. **Update semantic memory** (`memory/semantic-patterns.json`)
+2. **Store episodic memory** (`memory/episodic/YYYY-MM-DD-{skill}.json`)
+3. **Update pattern confidence** based on applications/feedback
+4. **Prune outdated patterns** (low confidence, no recent applications)
 
-  - If solution was effective:
-      pattern_level: best_practice
-      action: Add to skill's "Best Practices" section
+## Self-Correction (on_error hook)
 
-  - If user provided positive feedback:
-      pattern_level: strength
-      action: Reinforce this approach
+Triggered when:
+- Bash command returns non-zero exit code
+- Tests fail after following skill guidance
+- User reports the guidance produced incorrect results
 
-  - If user provided negative feedback:
-      pattern_level: weakness
-      action: Add to "What to Avoid" section
+**Process:**
+
+```markdown
+## Self-Correction Workflow
+
+1. Detect Error
+   - Capture error context from working/last_error.json
+   - Identify which skill guidance was followed
+
+2. Verify Root Cause
+   - Was the skill guidance incorrect?
+   - Was the guidance misinterpreted?
+   - Was the guidance incomplete?
+
+3. Apply Correction
+   - Update skill file with corrected guidance
+   - Add correction marker with reason
+   - Update related patterns in semantic memory
+
+4. Validate Fix
+   - Test the corrected guidance
+   - Ask user to verify
 ```
+
+**Example:**
+
+```markdown
+<!-- Correction: 2025-01-12 | was: "useMemo for claimable ids" | reason: stale data at click time -->
+
+## Self-Correction: Click-Time Computation
+
+**Issue**: Using useMemo for claimable IDs caused stale data
+**Fix**: Compute at click time for always-fresh data
+**Pattern**: click_time_vs_open_time_computation
+```
+
+## Self-Validation
+
+Periodically validate skill content:
+
+```markdown
+## Validation Report Template
+
+**Date**: [YYYY-MM-DD]
+**Scope**: [skill(s) validated]
+
+### Checks
+- [ ] Examples compile or run
+- [ ] Checklists match current repo conventions
+- [ ] External references still valid
+- [ ] No duplicated or conflicting guidance
+
+### Findings
+- [Finding 1]
+- [Finding 2]
+
+### Actions
+- [Action 1]
+- [Action 2]
+```
+
+## Hooks Integration
+
+### Wiring Hooks in Claude Code Settings
+
+Add to Claude Code settings (`~/.claude/settings.json`):
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${SKILLS_DIR}/self-improving-agent/hooks/pre-tool.sh \"$TOOL_NAME\" \"$TOOL_INPUT\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${SKILLS_DIR}/self-improving-agent/hooks/post-bash.sh \"$TOOL_OUTPUT\" \"$EXIT_CODE\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${SKILLS_DIR}/self-improving-agent/hooks/session-end.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Replace `${SKILLS_DIR}` with your actual skills path.
 
 ## Memory File Structure
 
 ```
 ~/.claude/memory/
 ├── semantic/
-│   ├── patterns.json          # All learned patterns
-│   ├── best_practices.json    # Proven effective methods
-│   └── anti_patterns.json     # Common mistakes to avoid
+│   └── patterns.json          # All learned patterns (included in repo)
 ├── episodic/
-│   ├── episodes.json          # All experiences
-│   └── reviews.json           # User feedback and ratings
+│   ├── 2025/
+│   │   ├── 2025-01-11-prd-creation.json
+│   │   └── 2025-01-11-debug-session.json
+│   └── episodes.json          # Index of all episodes
 ├── working/
 │   ├── current_session.json   # Current context
-│   └── recent_context.json    # Last 5 sessions
+│   ├── last_error.json        # Error context for self-correction
+│   └── session_end.json       # Session end marker
 └── index.json                 # Memory index and metadata
 ```
 
-## Integration with Workflows
-
-### Automatic Trigger Chain
+## Automatic Workflow Integration
 
 ```
-Any Skill Complete
-        ↓
-workflow-orchestrator detects completion
-        ↓
-self-improving-agent (background)
-        ↓
-┌─────────────────────────────────────────┐
-│  1. Extract experience from skill log   │
-│  2. Identify patterns to abstract      │
-│  3. Update relevant skills              │
-│  4. Consolidate memory                  │
-│  5. Generate improvement report        │
-└─────────────────────────────────────────┘
-        ↓
-create-pr (if skills modified, ask_first)
-        ↓
-session-logger (auto)
+┌─────────────────────┐
+│   Any Skill Run     │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐     ┌──────────────────────┐
+│  Skill Completes    │────→│ workflow-orchestrator │
+│  or Error Occurs    │     └──────────┬───────────┘
+└─────────────────────┘                │
+           │                           ▼
+           │              ┌──────────────────────────┐
+           │              │  self-improving-agent    │
+           │              │  (background)            │
+           │              └──────────┬───────────────┘
+           │                         │
+           │              ┌──────────▼───────────────┐
+           │              │  1. Extract experience   │
+           │              │  2. Identify patterns    │
+           │              │  3. Update skills        │
+           │              │  4. Consolidate memory   │
+           │              └──────────┬───────────────┘
+           │                         │
+           ▼                         ▼
+┌─────────────────────┐     ┌──────────────────────┐
+│  create-pr          │←────│  Skills Modified?     │
+│  (ask_first)        │     └──────────────────────┘
+└─────────────────────┘
+           │
+           ▼
+┌─────────────────────┐
+│  session-logger     │
+│  (auto)             │
+└─────────────────────┘
 ```
-
-### Skills That Should Update
-
-| Trigger Skill | Learning Source | Updates To |
-|---------------|-----------------|------------|
-| `prd-planner` | PRD creation quality | `prd-planner`, `architecting-solutions` |
-| `code-reviewer` | Code review patterns | `code-reviewer`, security patterns |
-| `debugger` | Debugging insights | `debugger`, anti-patterns |
-| `refactoring-specialist` | Refactoring approaches | All development skills |
-| `create-pr` | PR workflow | `create-pr` |
-| `user-feedback-*` | Direct feedback | Targeted skills |
 
 ## Continuous Learning Metrics
 
@@ -301,7 +453,8 @@ Track improvement over time:
     "skills_updated": 12,
     "avg_confidence": 0.87,
     "user_satisfaction_trend": "improving",
-    "error_rate_reduction": "-35%"
+    "error_rate_reduction": "-35%",
+    "self_corrections": 8
   }
 }
 ```
@@ -319,11 +472,11 @@ I've learned from our session and updated:
 
 ### Updated Skills
 - `debugger`: Added callback verification pattern
-- `prd-planner`: Enhanced notes persistence reminder
+- `prd-planner`: Enhanced UI/UX specification requirements
 
 ### Patterns Extracted
-1. Always verify callback implementations
-2. Persist thinking to files before synthesizing
+1. **state_monitoring_over_callbacks**: Use usePrevious for state-driven side effects
+2. **ui_ux_specification_granularity**: Explicit visual specs prevent rework
 
 ### Confidence Levels
 - New patterns: 0.85 (needs validation)
@@ -353,6 +506,16 @@ User Feedback:
     scope: Remove from active patterns
 ```
 
+## Templates
+
+Use these templates when updating skills:
+
+| Template | Purpose |
+|----------|---------|
+| `templates/pattern-template.md` | Adding new patterns |
+| `templates/correction-template.md` | Fixing incorrect guidance |
+| `templates/validation-template.md` | Validating skill accuracy |
+
 ## Best Practices
 
 ### DO
@@ -362,6 +525,8 @@ User Feedback:
 - ✅ Update multiple related skills
 - ✅ Track confidence and apply counts
 - ✅ Ask for user feedback on improvements
+- ✅ Use evolution/correction markers for traceability
+- ✅ Validate guidance before applying broadly
 
 ### DON'T
 
@@ -370,6 +535,7 @@ User Feedback:
 - ❌ Ignore negative feedback
 - ❌ Make changes that break existing functionality
 - ❌ Create contradictory patterns
+- ❌ Update skills without understanding context
 
 ## Quick Start
 

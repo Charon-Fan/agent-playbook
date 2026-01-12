@@ -15,7 +15,7 @@ This skill defines automatic trigger relationships between skills. When a skill 
 ```yaml
 prd_complete:
   triggers:
-    - skill: self-improving-prd
+    - skill: self-improving-agent
       mode: background
       condition: PRD file exists and is complete
     - skill: session-logger
@@ -65,11 +65,19 @@ To add auto-trigger capability to a skill, add to its front matter:
 name: my-skill
 description: Skill description
 allowed-tools: Read, Write, Edit
-after_complete:
-  - trigger: self-improving-prd
-    mode: background
-  - trigger: session-logger
-    mode: auto
+hooks:
+  before_start:
+    - trigger: session-logger
+      mode: auto
+      context: "Start {skill_name}"
+  after_complete:
+    - trigger: self-improving-agent
+      mode: background
+    - trigger: session-logger
+      mode: auto
+  on_error:
+    - trigger: self-improving-agent
+      mode: background
 ---
 ```
 
@@ -77,7 +85,7 @@ after_complete:
 
 When a skill completes its workflow:
 
-1. **Check `after_complete` hooks** in its own front matter
+1. **Check `hooks`** in its own front matter (`before_start`, `after_complete`, `on_error`, `on_progress`)
 2. **For each hook:**
    - If `mode: auto`, trigger immediately
    - If `mode: background`, trigger without waiting
@@ -94,30 +102,35 @@ When a skill completes its workflow:
 name: prd-planner
 description: Creates PRDs using persistent file-based planning...
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob, AskUserQuestion, WebSearch
-after_complete:
-  - trigger: self-improving-prd
-    mode: background
-    context: "PRD created at {prd_file}"
-  - trigger: session-logger
-    mode: auto
-    context: "PRD creation complete"
+hooks:
+  after_complete:
+    - trigger: self-improving-agent
+      mode: background
+      context: "PRD created at {prd_file}"
+    - trigger: session-logger
+      mode: auto
+      context: "PRD creation complete"
 ---
 ```
 
-### self-improving-prd should add:
+### self-improving-agent already has:
 
 ```yaml
 ---
-name: self-improving-prd
-description: A self-improving agent that uses reflection loops...
-allowed-tools: Read, Write, Edit, Bash, AskUserQuestion, WebSearch
-after_complete:
-  - trigger: create-pr
-    mode: ask_first
-    condition: skill_files_modified
-  - trigger: session-logger
-    mode: auto
-    context: "Self-improvement cycle complete"
+name: self-improving-agent
+description: Universal self-improvement that learns from all skill experiences...
+allowed-tools: Read, Write,Edit, Bash, Grep, Glob, WebSearch
+hooks:
+  after_complete:
+    - trigger: create-pr
+      mode: ask_first
+      condition: skills_modified
+    - trigger: session-logger
+      mode: auto
+      context: "Self-improvement cycle complete"
+  on_error:
+    - trigger: self-improving-agent
+      mode: background
 ---
 ```
 
@@ -128,10 +141,11 @@ after_complete:
 name: create-pr
 description: Creates pull requests with bilingual documentation updates...
 allowed-tools: Read, Write, Edit, Bash, Grep, AskUserQuestion
-after_complete:
-  - trigger: session-logger
-    mode: auto
-    context: "PR created: {pr_title}"
+hooks:
+  after_complete:
+    - trigger: session-logger
+      mode: auto
+      context: "PR created: {pr_title}"
 ---
 ```
 
@@ -142,10 +156,23 @@ after_complete:
 │ prd-planner  │
 └──────┬───────┘
        │ after_complete
-       ├──→ self-improving-prd (background)
+       ├──→ self-improving-agent (background)
        │         └──→ create-pr (ask_first)
        │                  └──→ session-logger (auto)
        └──→ session-logger (auto)
+```
+
+## Error Correction Chain
+
+```yaml
+on_error:
+  triggers:
+    - skill: self-improving-agent
+      mode: background
+      context: "Error occurred in {skill_name}"
+    - skill: session-logger
+      mode: auto
+      context: "Error captured for {skill_name}"
 ```
 
 ## Important Rules
