@@ -171,6 +171,18 @@ prd-implementation-precheck → 实现
 code-reviewer → self-improving-agent → create-pr
 ```
 
+## AI Agent 学习路径
+
+**[docs/ai-agent-learning-path.md](./docs/ai-agent-learning-path.md)** - 适用于 Claude、GLM、Codex 的 Agent 开发学习路径：
+
+| Level | 主题 | 时间 | 产出 |
+|-------|------|------|------|
+| 1 | 基础提示工程 | 1 周 | 完成单一任务 |
+| 2 | Skill 技能开发 | 1 周 | 第一个可复用 Skill |
+| 3 | 工作流编排 | 2 周 | 完整自动化流程 |
+| 4 | 自我学习系统 | 2-3 周 | 从经验中学习的 Agent |
+| 5 | 自进化 Agent | 2-3 周 | 完全自主进化 |
+
 ## 完整工作流示例
 
 **[docs/complete-workflow-example.md](./docs/complete-workflow-example.md)** - 从图片/需求到交付的完整流程演示：
