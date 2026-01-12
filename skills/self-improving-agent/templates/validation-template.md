@@ -1,22 +1,14 @@
-# Validation Report
+# Validation Template
 
-**Date**: [YYYY-MM-DD]
-**Scope**: [skill(s) validated]
-**Context**: [repo/branch]
+## Date
+
+## Scope
 
 ## Checks
-
 - [ ] Examples compile or run
-- [ ] Checklists match current repo conventions
-- [ ] References are still valid
-- [ ] Guidance is not duplicated or conflicting
+- [ ] Guidance matches current repo conventions
+- [ ] External references still valid
 
 ## Findings
 
-- [Finding 1]
-- [Finding 2]
-
 ## Actions
-
-- [Action 1]
-- [Action 2]

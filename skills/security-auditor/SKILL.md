@@ -51,7 +51,7 @@ grep -ri "secret.*=.*['\"]" src/
 grep -r "md5\|sha1" src/
 
 # Check for http URLs
-grep -r "http://" src/
+grep -r "http:\/\/" src/
 ```
 
 **Common Issues:**

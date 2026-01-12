@@ -219,4 +219,4 @@ Generates 4-file PRD with all visual specifications.
 
 - [SKILL.md](./SKILL.md) - Full skill definition with all templates
 - [prd-planner](../prd-planner/) - Create PRDs from design specs
-- [architecting-solutions](../architecting-solutions.md) - Technical architecture
+- [architecting-solutions](../architecting-solutions/) - Technical architecture

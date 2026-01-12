@@ -425,8 +425,8 @@ Phase 1: Initializing files
 
 ## References
 
-- [planning-with-files](../planning-with-files.md) - File-based planning methodology
-- [architecting-solutions](../architecting-solutions.md) - PRD creation best practices
+- [planning-with-files](../planning-with-files/) - File-based planning methodology
+- [architecting-solutions](../architecting-solutions/) - PRD creation best practices
 
 ---
 

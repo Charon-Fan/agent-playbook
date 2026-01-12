@@ -1,19 +1,11 @@
-<!-- Correction: YYYY-MM-DD | was: [old guidance] | reason: [why wrong] -->
+# Correction Template
 
-# Correction
+## Issue Summary
 
-## What Was Wrong
+## Previous Guidance
 
-- Describe the incorrect guidance
+## Corrected Guidance
 
-## What Changed
+## Root Cause
 
-- Describe the corrected guidance
-
-## Verification
-
-- How the fix was validated
-
-## Impacted Skills
-
-- [skill-name]
+## Follow-up Actions

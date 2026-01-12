@@ -28,7 +28,7 @@ Activates when you:
 2. **Measure current performance**
    ```bash
    # Response time
-   curl -w "@curl-format.txt" -o /dev/null -s https://api.example.com/users
+   curl -w "@curl-format.txt" -o /dev/null -s https://example.com/users
 
    # Database query time
    # Add timing logs to queries

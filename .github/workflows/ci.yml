@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  skills-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python3 scripts/validate_skills.py
+
+  skills-ref-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python3 -m pip install "git+https://github.com/agentskills/agentskills.git@main#subdirectory=skills-ref"
+      - run: |
+          set -euo pipefail
+          while IFS= read -r -d '' skill_md; do
+            skills-ref validate "$(dirname "$skill_md")"
+          done < <(find skills -mindepth 2 -maxdepth 2 -name SKILL.md -print0)
+
+  markdownlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          config: markdownlint-cli2.jsonc
+
+  link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lycheeverse/lychee-action@v1
+        with:
+          args: --config .lychee.toml --no-progress
+
+  mcp-server-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: |
+          cd mcp-server
+          npm ci
+          timeout 5s node index.js < /dev/null || test $? -eq 124
