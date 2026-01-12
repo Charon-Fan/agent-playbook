@@ -15,13 +15,12 @@ hooks:
     - trigger: session-logger
       mode: auto
       context: "Self-improvement cycle complete"
+  # Note: on_error intentionally only logs to session to avoid infinite recursion
+  # Self-correction is triggered by other skills (debugger, code-reviewer) completing their work
   on_error:
-    - trigger: self-improving-agent
-      mode: background
-      context: "Self-correction triggered"
     - trigger: session-logger
       mode: auto
-      context: "Error captured for correction"
+      context: "Error captured in {skill_name}"
 ---
 
 # Self-Improving Agent

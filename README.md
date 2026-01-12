@@ -20,8 +20,10 @@ ln -s /path/to/agent-playbook/skills/*.md ~/.claude/skills/
 ```
 
 Example:
+
 ```bash
-ln -s ~/Documents/code/GitHub/agent-playbook/skills/self-improving-prd.md ~/.claude/skills/
+# Link individual skills
+ln -s ~/Documents/code/GitHub/agent-playbook/skills/skill-router/SKILL.md ~/.claude/skills/skill-router.md
 ln -s ~/Documents/code/GitHub/agent-playbook/skills/architecting-solutions.md ~/.claude/skills/
 ln -s ~/Documents/code/GitHub/agent-playbook/skills/planning-with-files.md ~/.claude/skills/
 ```
@@ -31,7 +33,7 @@ ln -s ~/Documents/code/GitHub/agent-playbook/skills/planning-with-files.md ~/.cl
 Copy the skills directly to your global Claude Code directory:
 
 ```bash
-cp /path/to/agent-playbook/skills/*.md ~/.claude/skills/
+cp -r /path/to/agent-playbook/skills/* ~/.claude/skills/
 ```
 
 ### Method 3: Add to Project-Specific Skills
@@ -40,7 +42,7 @@ For project-specific usage, create a `.claude/skills` directory in your project:
 
 ```bash
 mkdir -p .claude/skills
-cp /path/to/agent-playbook/skills/*.md .claude/skills/
+cp -r /path/to/agent-playbook/skills/* .claude/skills/
 ```
 
 ### Verify Installation
@@ -57,78 +59,82 @@ ls -la ~/.claude/skills/
 agent-playbook/
 ├── prompts/       # Prompt templates and examples
 ├── skills/        # Custom skills documentation
-├── agents/        # Agent configurations and use cases
-├── examples/      # Complete usage examples
+├── docs/          # Automation best practices and examples
+├── mcp-server/    # MCP server for skill discovery
 └── README.md      # Project documentation
 ```
 
-## Directory Contents
+## Skills Catalog
 
-### [prompts/](./prompts/)
-Prompt templates for various scenarios:
-- Code generation
-- Code review
-- Debugging
-- Documentation
-- Other use cases
+### Meta Skills (Workflow & Automation)
 
-### [skills/](./skills/)
-Documentation for custom Claude Code skills:
+| Skill | Description | Auto-Trigger |
+|-------|-------------|--------------|
+| **[skill-router](./skills/skill-router/)** | Intelligently routes user requests to the most appropriate skill | Manual |
+| **[create-pr](./skills/create-pr/)** | Creates PRs with automatic bilingual documentation updates | After skill updates |
+| **[session-logger](./skills/session-logger/)** | Saves conversation history to session log files | Auto (after any skill) |
+| **[auto-trigger](./skills/auto-trigger/)** | Defines automatic trigger relationships between skills | Config only |
+| **[workflow-orchestrator](./skills/workflow-orchestrator/)** | Coordinates multi-skill workflows and triggers follow-up actions | Auto |
+| **[self-improving-agent](./skills/self-improving-agent/)** | Universal self-improvement that learns from ALL skill experiences | Background |
 
-#### Meta Skills
+### Core Development
 
-| Skill | Description |
-|-------|-------------|
-| **[skill-router](./skills/skill-router/)** | Intelligently routes user requests to the most appropriate skill |
-| **[create-pr](./skills/create-pr/)** | Creates PRs with automatic bilingual documentation updates |
-| **[session-logger](./skills/session-logger/)** | Saves conversation history to session log files |
+| Skill | Description | Auto-Trigger |
+|-------|-------------|--------------|
+| **[commit-helper](./skills/commit-helper/)** | Git commit messages following Conventional Commits specification | Manual |
+| **[code-reviewer](./skills/code-reviewer/)** | Comprehensive code review for quality, security, and best practices | Manual / After implementation |
+| **[debugger](./skills/debugger/)** | Systematic debugging and issue resolution | Manual |
+| **[refactoring-specialist](./skills/refactoring-specialist/)** | Code refactoring and technical debt reduction | Manual |
 
-#### Core Development
+### Documentation & Testing
 
-| Skill | Description |
-|-------|-------------|
-| **[commit-helper](./skills/commit-helper/)** | Git commit messages following Conventional Commits specification |
-| **[code-reviewer](./skills/code-reviewer/)** | Comprehensive code review for quality, security, and best practices |
-| **[debugger](./skills/debugger/)** | Systematic debugging and issue resolution |
-| **[refactoring-specialist](./skills/refactoring-specialist/)** | Code refactoring and technical debt reduction |
+| Skill | Description | Auto-Trigger |
+|-------|-------------|--------------|
+| **[documentation-engineer](./skills/documentation-engineer/)** | Technical documentation and README creation | Manual |
+| **[api-documenter](./skills/api-documenter/)** | OpenAPI/Swagger API documentation | Manual |
+| **[test-automator](./skills/test-automator/)** | Automated testing framework setup and test creation | Manual |
+| **[qa-expert](./skills/qa-expert/)** | Quality assurance strategy and quality gates | Manual |
 
-#### Documentation & Testing
+### Architecture & DevOps
 
-| Skill | Description |
-|-------|-------------|
-| **[documentation-engineer](./skills/documentation-engineer/)** | Technical documentation and README creation |
-| **[api-documenter](./skills/api-documenter/)** | OpenAPI/Swagger API documentation |
-| **[test-automator](./skills/test-automator/)** | Automated testing framework setup and test creation |
-| **[qa-expert](./skills/qa-expert/)** | Quality assurance strategy and quality gates |
+| Skill | Description | Auto-Trigger |
+|-------|-------------|--------------|
+| **[api-designer](./skills/api-designer/)** | REST and GraphQL API architecture design | Manual |
+| **[security-auditor](./skills/security-auditor/)** | Security audit covering OWASP Top 10 | Manual |
+| **[performance-engineer](./skills/performance-engineer/)** | Performance optimization and analysis | Manual |
+| **[deployment-engineer](./skills/deployment-engineer/)** | CI/CD pipelines and deployment automation | Manual |
 
-#### Architecture & DevOps
+### Planning & Architecture
 
-| Skill | Description |
-|-------|-------------|
-| **[api-designer](./skills/api-designer/)** | REST and GraphQL API architecture design |
-| **[security-auditor](./skills/security-auditor/)** | Security audit covering OWASP Top 10 |
-| **[performance-engineer](./skills/performance-engineer/)** | Performance optimization and analysis |
-| **[deployment-engineer](./skills/deployment-engineer/)** | CI/CD pipelines and deployment automation |
+| Skill | Description | Auto-Trigger |
+|-------|-------------|--------------|
+| **[prd-planner](./skills/prd-planner/)** | Creates PRDs using persistent file-based planning | Manual (keyword: "PRD") |
+| **[prd-implementation-precheck](./skills/prd-implementation-precheck/)** | Performs preflight review before implementing PRDs | Manual |
+| **[architecting-solutions](./skills/architecting-solutions.md)** | Technical solution and architecture design | Manual (keyword: "design solution") |
+| **[planning-with-files](./skills/planning-with-files.md)** | General file-based planning for multi-step tasks | Manual |
 
-#### Planning & Architecture
+## How Auto-Triggers Work
 
-| Skill | Description |
-|-------|-------------|
-| **[prd-planner](./skills/prd-planner/)** | Creates PRDs using persistent file-based planning (avoids context switching) |
-| **[prd-implementation-precheck](./skills/prd-implementation-precheck/)** | Performs preflight review before implementing PRDs |
-| **[architecting-solutions](./skills/architecting-solutions.md)** | Technical solution and architecture design (not PRD-specific) |
-| **[planning-with-files](./skills/planning-with-files.md)** | General file-based planning for multi-step tasks |
-| **[self-improving-agent](./skills/self-improving-agent/)** | Universal self-improvement system that learns from ALL skill experiences |
-| **[self-improving-prd](./skills/self-improving-prd.md)** | Self-improving PRD with reflection loops (legacy, see self-improving-agent) |
+Skills can automatically trigger other skills when they complete. This creates workflows:
 
-### [agents/](./agents/)
-Agent configurations and usage patterns:
-- Scenario-specific agent configurations
-- Agent collaboration patterns
-- Best practices and case studies
+```
+┌──────────────┐
+│  prd-planner │ completes
+└──────┬───────┘
+       │
+       ├──→ self-improving-agent (background) → learns from PRD patterns
+       │         └──→ create-pr (ask first) ──→ session-logger (auto)
+       │
+       └──→ session-logger (auto)
+```
 
-### [examples/](./examples/)
-Complete usage examples and tutorials
+### Auto-Trigger Modes
+
+| Mode | Behavior |
+|------|----------|
+| `auto` | Executes immediately, blocks until complete |
+| `background` | Runs without blocking, no wait for result |
+| `ask_first` | Asks user before executing |
 
 ## Usage
 
@@ -138,11 +144,32 @@ Once installed, skills are automatically available in any Claude Code session. Y
 2. **Manual invocation** - Explicitly ask Claude to use a specific skill
 
 Example:
+
 ```
 You: Create a PRD for a new authentication feature
 ```
 
-The architecting-solutions skill will activate automatically.
+The `prd-planner` skill will activate automatically.
+
+## Workflow Example
+
+Full PRD-to-implementation workflow:
+
+```
+User: "Create a PRD for user authentication"
+       ↓
+prd-planner executes
+       ↓
+Phase complete → Auto-triggers:
+       ├──→ self-improving-agent (background) - extracts patterns
+       └──→ session-logger (auto) - saves session
+       ↓
+User: "Implement this PRD"
+       ↓
+prd-implementation-precheck → implementation
+       ↓
+code-reviewer → self-improving-agent → create-pr
+```
 
 ## Updating Skills
 
@@ -154,13 +181,21 @@ git pull origin main
 ```
 
 If using copied skills, re-copy the updated files:
+
 ```bash
-cp /path/to/agent-playbook/skills/*.md ~/.claude/skills/
+cp -r /path/to/agent-playbook/skills/* ~/.claude/skills/
 ```
 
 ## Contributing
 
 Contributions are welcome! Feel free to submit PRs with your own prompts, skills, or use cases.
+
+When contributing skills:
+
+1. Add your skill to the appropriate category in the Skills Catalog above
+2. Include `SKILL.md` with proper front matter (name, description, allowed-tools, hooks)
+3. Add `README.md` with usage examples
+4. Update both README.md and README.zh-CN.md
 
 ## License
 
