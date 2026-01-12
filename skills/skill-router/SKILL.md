@@ -27,6 +27,12 @@ This skill activates when you:
 | `debugger` | Diagnosing bugs, errors, unexpected behavior |
 | `refactoring-specialist` | Improving code structure, reducing technical debt |
 
+### Design & UX
+
+| Skill | Best For |
+|-------|----------|
+| `figma-designer` | Analyzing Figma designs and producing implementation-ready visual specs/PRDs |
+
 ### Documentation & Testing
 
 | Skill | Best For |
