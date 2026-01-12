@@ -1,0 +1,459 @@
+# AI Agent 学习路径
+
+> 适用于 Claude、GLM、Codex 等多种 AI 平台的 Agent 开发指南
+
+本文档提供了一条从入门到精通的 AI Agent 开发学习路径，适用于：
+- **Claude Code** (Anthropic)
+- **GLM Code** (智谱 GLM-4-All Tools)
+- **Codex** (OpenAI/GitHub Copilot)
+
+## 学习路径概览
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      AI AGENT LEARNING PATH                      │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Level 1    Level 2    Level 3    Level 4    Level 5           │
+│  ┌─────┐   ┌─────┐   ┌─────┐   ┌─────┐   ┌─────┐             │
+│  │基础 │ → │技能 │ → │编排 │ → │学习 │ → │进化 │             │
+│  │提示 │   │开发 │   │协作 │   │系统 │   │Agent│             │
+│  └─────┘   └─────┘   └─────┘   └─────┘   └─────┘             │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Level 1: 基础提示工程
+
+### 目标
+掌握基本的 Prompt 编写技巧，让 AI 完成单一任务。
+
+### 学习内容
+
+| 主题 | 关键点 | 练习 |
+|------|--------|------|
+| **清晰指令** | 明确描述任务，避免歧义 | 让 AI 写一个函数 |
+| **上下文提供** | 提供必要的背景信息 | 给代码上下文让 AI 解释 |
+| **输出格式** | 指定期望的输出格式 | 要求输出 JSON/Markdown |
+| **迭代优化** | 根据输出调整 Prompt | 多轮对话完成任务 |
+
+### 练习项目
+
+```
+项目 1: 代码解释器
+- 输入: 一段代码
+- 输出: 代码功能解释
+- 技能: 基础提示 + 上下文
+
+项目 2: 文档生成器
+- 输入: 代码/函数
+- 输出: 格式化的文档
+- 技能: 输出格式控制
+
+项目 3: Bug 定位助手
+- 输入: 错误信息 + 代码
+- 输出: 可能的原因和修复建议
+- 技能: 问题分析 + 上下文
+```
+
+### 平台差异
+
+| 特性 | Claude | GLM | Codex |
+|------|--------|-----|-------|
+| 代码理解 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| 中文支持 | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
+| 工具调用 | 原生支持 | GLM-4-All Tools | 需封装 |
+| 上下文窗口 | 200K tokens | 128K tokens | 取决于版本 |
+
+---
+
+## Level 2: Skill 技能开发
+
+### 目标
+创建可复用的 "Skill"（技能/插件），让 AI 执行专门任务。
+
+### 核心概念
+
+#### 什么是 Skill？
+
+Skill 是一个**可复用的提示词模板**，定义了 AI 如何处理特定类型的任务。
+
+```markdown
+---
+name: code-reviewer
+description: 代码审核技能
+tools: Read, Grep, Edit
+---
+
+# Code Reviewer
+
+## 任务
+审核代码质量、安全性和最佳实践
+
+## 检查项
+- [ ] 代码规范
+- [ ] 安全漏洞
+- [ ] 性能问题
+- [ ] 测试覆盖
+```
+
+### Skill 结构
+
+```
+skill-name/
+├── SKILL.md          # 技能定义（必需）
+├── README.md         # 使用文档（可选）
+├── config.json       # 配置（可选）
+└── references/       # 参考资料（可选）
+```
+
+### 练习项目
+
+```
+项目 1: 提交信息生成器
+- 技能: commit-helper
+- 输入: 代码变更
+- 输出: Conventional Commits 格式的提交信息
+
+项目 2: API 文档生成器
+- 技能: api-documenter
+- 输入: API 代码
+- 输出: OpenAPI/Swagger 规范
+
+项目 3: 单元测试生成器
+- 技能: test-automator
+- 输入: 函数代码
+- 输出: 单元测试代码
+```
+
+---
+
+## Level 3: 工作流编排
+
+### 目标
+将多个 Skill 组合成完整的工作流，实现复杂任务的自动化。
+
+### 核心概念
+
+#### 自动触发 (Auto-Trigger)
+
+当一个 Skill 完成时，自动触发下一个 Skill：
+
+```yaml
+hooks:
+  after_complete:
+    - trigger: code-reviewer
+      mode: auto
+    - trigger: session-logger
+      mode: auto
+```
+
+#### 触发模式
+
+| 模式 | 行为 | 使用场景 |
+|------|------|----------|
+| `auto` | 立即执行，阻塞等待 | 保存会话 |
+| `background` | 后台运行，不等待 | 学习模式 |
+| `ask_first` | 询问用户后执行 | 创建 PR |
+
+### 工作流示例
+
+```
+PRD 创建工作流:
+┌──────────────┐
+│ prd-planner  │ 完成
+└──────┬───────┘
+       │
+       ├──→ self-improving-agent (background) - 学习 PRD 模式
+       └──→ session-logger (auto) - 保存会话
+
+代码审核工作流:
+┌──────────────┐
+│ code-reviewer │ 完成
+└──────┬───────┘
+       │
+       ├──→ self-improving-agent (background) - 学习审核模式
+       └──→ session-logger (auto) - 保存审核记录
+```
+
+### 练习项目
+
+```
+项目 1: 自动化 PR 流程
+- prd-planner → 实现 → code-reviewer → create-pr
+
+项目 2: 文档同步流程
+- 修改代码 → 提取变更 → 更新 EN README → 更新 CN README
+
+项目 3: 质量门禁流程
+- 代码提交 → test-automator → qa-expert → 通过/拒绝
+```
+
+---
+
+## Level 4: 自我学习系统
+
+### 目标
+构建能从经验中学习并自我改进的 Agent。
+
+### 核心架构
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    MULTI-MEMORY SYSTEM                      │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
+│  │Semantic      │  │Episodic      │  │Working       │     │
+│  │Memory        │  │Memory        │  │Memory        │     │
+│  ├──────────────┤  ├──────────────┤  ├──────────────┤     │
+│  │Patterns      │  │Experiences   │  │Current       │     │
+│  │Rules         │  │Episodes      │  │Session       │     │
+│  │Best Practices│  │Feedback      │  │Context       │     │
+│  └──────────────┘  └──────────────┘  └──────────────┘     │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 记忆类型
+
+| 类型 | 内容 | 存储位置 | 更新频率 |
+|------|------|----------|----------|
+| **Semantic Memory** | 抽象模式、规则 | `memory/semantic/` | 提取新模式时 |
+| **Episodic Memory** | 具体经历、反馈 | `memory/episodic/` | 每次任务后 |
+| **Working Memory** | 当前会话上下文 | `memory/working/` | 实时更新 |
+
+### 学习循环
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    SELF-IMPROVEMENT LOOP                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. EXPERIENCE    2. EXTRACT    3. ABSTRACT    4. UPDATE   │
+│  ┌─────────┐     ┌─────────┐    ┌─────────┐    ┌─────────┐ │
+│  │ Complete │  →  │ What    │ →  │ Pattern │ →  │ Skills  │ │
+│  │ task    │     │ happened│    │         │    │ files   │ │
+│  └─────────┘     └─────────┘    └─────────┘    └─────────┘ │
+│       ▲                                                  │
+│       └──────────────────────────────────────────────────┘
+│                    Memory persist                          │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 实现示例
+
+```json
+// memory/semantic/patterns.json
+{
+  "patterns": {
+    "ui_specification_granularity": {
+      "pattern": "UI PRDs 需要明确的视觉规范",
+      "confidence": 0.95,
+      "applications": 5
+    }
+  }
+}
+```
+
+```json
+// memory/episodic/2025-01-12-prd-review.json
+{
+  "episode": "ep-2025-01-12-001",
+  "situation": "用户反馈 UI 规范不够详细",
+  "action": "添加视觉规范检查项",
+  "result": "下次 PRD 质量提升"
+}
+```
+
+---
+
+## Level 5: 自进化 Agent
+
+### 目标
+构建能完全自我进化、无需人工干预的 Agent。
+
+### 核心能力
+
+| 能力 | 描述 | 实现方式 |
+|------|------|----------|
+| **自我修正** | 检测并修复错误 | on_error hook + 错误分析 |
+| **自我验证** | 定期验证自身准确性 | validation 模板 |
+| **自我优化** | 优化自身性能 | 模式应用统计 |
+| **版本适应** | 适应不同环境版本 | 上下文感知 |
+
+### 进化标记
+
+```markdown
+<!-- Evolution: 2025-01-12 | source: ep-001 | skill: prd-planner -->
+```
+
+```markdown
+<!-- Correction: 2025-01-12 | was: "使用回调链" | reason: 导致数据过期 -->
+```
+
+### 完整生命周期
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                     EVOLUTIONARY AGENT LIFECYCLE                 │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                    START                                  │    │
+│  │  User provides requirement / Upload image               │    │
+│  └──────────────────────────┬──────────────────────────────┘    │
+│                           │                                     │
+│                           ▼                                     │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                    EXECUTE                                │    │
+│  │  prd-planner → implement → code-reviewer                 │    │
+│  └──────────────────────────┬──────────────────────────────┘    │
+│                           │                                     │
+│                           ▼                                     │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                    REFLECT                                │    │
+│  │  self-improving-agent extracts patterns                 │    │
+│  └──────────────────────────┬──────────────────────────────┘    │
+│                           │                                     │
+│                           ▼                                     │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                    EVOLVE                                 │    │
+│  │  Update skills with new patterns → Add markers          │    │
+│  └──────────────────────────┬──────────────────────────────┘    │
+│                           │                                     │
+│                           ▼                                     │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                    DELIVER                                │    │
+│  │  create-pr → Submit with bilingual README updates       │    │
+│  └──────────────────────────┬──────────────────────────────┘    │
+│                           │                                     │
+│                           ▼                                     │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                    CONTINUE                               │    │
+│  │  Wait for feedback → Learn from feedback → Improve      │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 平台特定指南
+
+### Claude Code
+
+**优势：**
+- 原生支持 Skills 和 Hooks
+- 大上下文窗口 (200K)
+- 优秀的代码理解能力
+
+**快速开始：**
+```bash
+# 安装 Skills
+ln -s ~/agent-playbook/skills/* ~/.claude/skills/
+
+# 配置 Hooks（可选）
+~/.claude/settings.json
+```
+
+### GLM Code (智谱)
+
+**优势：**
+- 中文理解最强
+- GLM-4-All Tools 支持工具调用
+- 128K 上下文窗口
+
+**快速开始：**
+```python
+# GLM 工具调用示例
+from zhipuai import ZhipuAI
+
+client = ZhipuAI(api_key="...")
+
+# 定义 Skill 作为系统提示
+skill = open("skills/prd-planner/SKILL.md").read()
+
+response = client.chat.completions.create(
+    model="glm-4-all-tools",
+    messages=[
+        {"role": "system", "content": skill},
+        {"role": "user", "content": "帮我创建用户认证的 PRD"}
+    ],
+    tools=[...],  # 工具定义
+)
+```
+
+### Codex / OpenAI
+
+**优势：**
+- GitHub Copilot 集成
+- 代码生成能力极强
+- 丰富的生态支持
+
+**快速开始：**
+```python
+# OpenAI 函数调用
+from openai import OpenAI
+
+client = OpenAI()
+
+skill = open("skills/prd-planner/SKILL.md").read()
+
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": skill},
+        {"role": "user", "content": "创建用户认证 PRD"}
+    ],
+    functions=[...],  # 类似 Tools
+)
+```
+
+---
+
+## 学习资源
+
+### 通用
+- [Anthropic Prompt Engineering Guide](https://docs.anthropic.com/claude/docs/prompt-engineering)
+- [OpenAI Prompt Engineering Guide](https://platform.openai.com/docs/guides/prompt-engineering)
+- [智谱 AI 开发平台](https://open.bigmodel.cn/dev/api)
+
+### 本仓库
+- [skills/](../skills/) - 20+ 生产就绪的 Skills
+- [docs/complete-workflow-example.md](./complete-workflow-example.md) - 完整工作流示例
+- [docs/automation-best-practices.md](./automation-best-practices.md) - 自动化最佳实践
+
+---
+
+## 行动计划
+
+### Week 1-2: Level 1-2
+- [ ] 完成基础提示工程练习
+- [ ] 创建第一个 Skill（如 commit-helper）
+- [ ] 测试不同平台的兼容性
+
+### Week 3-4: Level 3
+- [ ] 学习 Hooks 和自动触发
+- [ ] 构建第一个完整工作流
+- [ ] 实现多 Skill 协作
+
+### Week 5-8: Level 4-5
+- [ ] 实现多记忆系统
+- [ ] 构建自我改进循环
+- [ ] 添加进化标记和修正机制
+
+---
+
+## 总结
+
+| Level | 主题 | 时间 | 产出 |
+|-------|------|------|------|
+| 1 | 基础提示 | 1 周 | 能用 AI 完成单一任务 |
+| 2 | Skill 开发 | 1 周 | 第一个可复用 Skill |
+| 3 | 工作流编排 | 2 周 | 完整的自动化流程 |
+| 4 | 自我学习 | 2-3 周 | 能从经验中学习的 Agent |
+| 5 | 自进化 | 2-3 周 | 完全自主进化的 Agent |
+
+**总时间：8-10 周** → 成为 AI Agent 开发专家
