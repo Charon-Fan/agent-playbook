@@ -40,21 +40,23 @@ To create a single, coherent PRD creation workflow that doesn't lose context.
 
 For every PRD project, create FOUR files:
 
+Pick a SCOPE (short, unique, kebab-case slug) and use it as a prefix for all files.
+
 ```text
-docs/prd-notes.md          → Store research, requirements, findings, options
-docs/prd-task-plan.md      → Track PRD creation phases and progress
-docs/{feature-name}-prd.md → Product requirements (what & why)
-docs/{feature-name}-tech.md → Technical design (how)
+docs/{scope}-prd-notes.md     → Store research, requirements, findings, options
+docs/{scope}-prd-task-plan.md → Track PRD creation phases and progress
+docs/{scope}-prd.md           → Product requirements (what & why)
+docs/{scope}-tech.md          → Technical design (how)
 ```
 
 ### File Purposes
 
 | File | Purpose | Audience | Updated When |
 |------|---------|----------|--------------|
-| `prd-notes.md` | Raw research, requirements, architecture options (A/B/C) | Self + reviewers | New information gathered |
-| `prd-task-plan.md` | Track progress, phases, checkboxes, timestamps | PM + dev lead | Each phase completion |
-| `{feature}-prd.md` | Product requirements (what & why), user flows | PM + stakeholders + devs | After requirements are clear |
-| `{feature}-tech.md` | Technical design (API, data flow, implementation) | Developers + architects | After architecture is decided |
+| `{scope}-prd-notes.md` | Raw research, requirements, architecture options (A/B/C) | Self + reviewers | New information gathered |
+| `{scope}-prd-task-plan.md` | Track progress, phases, checkboxes, timestamps | PM + dev lead | Each phase completion |
+| `{scope}-prd.md` | Product requirements (what & why), user flows | PM + stakeholders + devs | After requirements are clear |
+| `{scope}-tech.md` | Technical design (API, data flow, implementation) | Developers + architects | After architecture is decided |
 
 ## Workflow
 
@@ -64,11 +66,11 @@ docs/{feature-name}-tech.md → Technical design (how)
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  1. Initialize → Create 4 files with template                   │
-│  2. Requirements → Gather to prd-notes.md                       │
+│  2. Requirements → Gather to {scope}-prd-notes.md               │
 │  3. Analysis → Research best practices, save to notes           │
 │  4. Design → Propose architecture options (A/B/C), save to notes │
-│  5. PRD → Write product requirements to {feature}-prd.md        │
-│  6. Tech → Write technical design to {feature}-tech.md          │
+│  5. PRD → Write product requirements to {scope}-prd.md          │
+│  6. Tech → Write technical design to {scope}-tech.md            │
 │  7. Validate → Review with user, finalize                       │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
@@ -82,7 +84,7 @@ docs/{feature-name}-tech.md → Technical design (how)
 
 Create the four files with templates:
 
-### prd-task-plan.md
+### {scope}-prd-task-plan.md
 
 ```markdown
 # PRD Task Plan: {Feature Name}
@@ -109,7 +111,7 @@ Create a PRD and technical design for {feature description}.
 - {timestamp} - Phase 1 complete: Files initialized
 ```
 
-### prd-notes.md
+### {scope}-prd-notes.md
 
 ```markdown
 # PRD Notes: {Feature Name}
@@ -143,7 +145,7 @@ Create a PRD and technical design for {feature description}.
 (Track questions to ask user)
 ```
 
-### {feature}-prd.md
+### {scope}-prd.md
 
 ```markdown
 # PRD: {Feature Name}
@@ -185,7 +187,7 @@ _To be filled with measurable criteria_
 ... (rest of PRD sections)
 ```
 
-### {feature}-tech.md
+### {scope}-tech.md
 
 ```markdown
 # Technical Design: {Feature Name}
@@ -214,7 +216,7 @@ _To be filled with measurable criteria_
 
 ## Step 2: Gather Requirements
 
-Ask clarifying questions and save responses to `prd-notes.md`:
+Ask clarifying questions and save responses to `{scope}-prd-notes.md`:
 
 ### Core Questions to Ask
 
@@ -223,9 +225,9 @@ Ask clarifying questions and save responses to `prd-notes.md`:
 3. **Success**: How do we know it's successful?
 4. **Constraints**: Any technical/time/budget constraints?
 
-Save each answer to `prd-notes.md` under appropriate section.
+Save each answer to `{scope}-prd-notes.md` under appropriate section.
 
-**Always update `prd-task-plan.md` after gathering info:**
+**Always update `{scope}-prd-task-plan.md` after gathering info:**
 ```markdown
 - [x] Phase 2: Gather requirements ✓
 - [ ] Phase 3: Research & analysis (CURRENT)
@@ -233,7 +235,7 @@ Save each answer to `prd-notes.md` under appropriate section.
 
 ## Step 3: Research & Analysis
 
-Research best practices and save to `prd-notes.md`:
+Research best practices and save to `{scope}-prd-notes.md`:
 
 ```bash
 # Search for similar implementations
@@ -243,11 +245,11 @@ grep -r "keyword" packages/ --include="*.ts"
 web search "best practices for {feature}"
 ```
 
-Save findings to `prd-notes.md` → Research Findings section.
+Save findings to `{scope}-prd-notes.md` → Research Findings section.
 
 ## Step 4: Design Solution
 
-Propose architecture with trade-offs, save to `prd-notes.md`:
+Propose architecture with trade-offs, save to `{scope}-prd-notes.md`:
 
 ```markdown
 ## Architecture Options
@@ -269,15 +271,15 @@ Propose architecture with trade-offs, save to `prd-notes.md`:
 
 ## Step 5: Write PRD
 
-Read `prd-notes.md` and synthesize into polished PRD:
+Read `{scope}-prd-notes.md` and synthesize into polished PRD:
 
 ```markdown
-1. Read prd-notes.md to understand:
+1. Read {scope}-prd-notes.md to understand:
    - Requirements gathered
    - Research findings
    - Architecture decision (which option was selected)
 
-2. Write {feature}-prd.md with:
+2. Write {scope}-prd.md with:
    - Clear problem statement
    - Goals and Non-Goals (explicit exclusions)
    - Measurable success criteria (specific numbers/timings)
@@ -287,15 +289,15 @@ Read `prd-notes.md` and synthesize into polished PRD:
    - User flows
    - Implementation plan (high level)
 
-3. Reference tech doc: "See {feature}-tech.md for technical design"
+3. Reference tech doc: "See {scope}-tech.md for technical design"
 ```
 
 ## Step 6: Write Technical Design
 
 ```markdown
-1. Read prd-notes.md for selected architecture option
+1. Read {scope}-prd-notes.md for selected architecture option
 
-2. Write {feature}-tech.md with:
+2. Write {scope}-tech.md with:
    - Overview (technical approach summary)
    - Key Components (what pieces, responsibilities)
    - API Design (signatures, contracts)
@@ -317,17 +319,17 @@ Review with user:
 ### ALWAYS Use Files (Never Memory Only)
 
 ❌ **Bad**: Keep requirements in memory, then write PRD
-✅ **Good**: Save requirements to notes.md, then read and synthesize
+✅ **Good**: Save requirements to {scope}-prd-notes.md, then read and synthesize
 
 ### ALWAYS Update Plan After Each Phase
 
 ❌ **Bad**: Complete phase and move on
-✅ **Good**: Complete phase, update task_plan.md with checkbox and timestamp
+✅ **Good**: Complete phase, update {scope}-prd-task-plan.md with checkbox and timestamp
 
 ### ALWAYS Read Notes Before Decisions
 
 ❌ **Bad**: Make design decisions from memory
-✅ **Good**: Read prd-notes.md first, then decide
+✅ **Good**: Read {scope}-prd-notes.md first, then decide
 
 ### ALWAYS Separate PRD and Tech Doc
 
@@ -347,7 +349,7 @@ Review with user:
 ## Phase Transitions
 
 ```markdown
-# In prd-task-plan.md, update like this:
+# In {scope}-prd-task-plan.md, update like this:
 
 - [ ] Phase 2: Gather requirements
 - [x] Phase 3: Research & analysis ✓
@@ -376,19 +378,19 @@ When all phases are done:
 - [x] Phase 7: Validate & finalize ✓
 
 ## Status
-✅ **COMPLETE** - PRD delivered to docs/{feature}-prd.md, Tech doc at docs/{feature}-tech.md
+✅ **COMPLETE** - PRD delivered to docs/{scope}-prd.md, Tech doc at docs/{scope}-tech.md
 
 ## Progress Log
-- {timestamp} - PRD complete: docs/{feature}-prd.md
-- {timestamp} - Tech doc complete: docs/{feature}-tech.md
+- {timestamp} - PRD complete: docs/{scope}-prd.md
+- {timestamp} - Tech doc complete: docs/{scope}-tech.md
 ```
 
 ## File Cleanup (Optional)
 
 After PRD is complete:
-- Keep `prd-notes.md` for reference (shows decision process)
-- Archive `prd-task-plan.md` or delete
-- Final outputs are `{feature}-prd.md` and `{feature}-tech.md`
+- Keep `{scope}-prd-notes.md` for reference (shows decision process)
+- Archive `{scope}-prd-task-plan.md` or delete
+- Final outputs are `{scope}-prd.md` and `{scope}-tech.md`
 
 ## Quick Start Template
 
@@ -416,7 +418,7 @@ Phase 1: Initializing files
 | Problem | Solution |
 |---------|----------|
 | Context switching | All thinking in files, read anytime |
-| Lost requirements | Saved to notes.md immediately |
+| Lost requirements | Saved to {scope}-prd-notes.md immediately |
 | Inconsistent PRDs | Same process, same structure |
 | "Left brain vs right brain" | One coherent workflow |
 | Re-explaining context | Files contain full context |
@@ -470,8 +472,8 @@ After completing Phase 7, the skill should:
 ## PRD Complete ✅
 
 All phases completed. Deliverables:
-- docs/{feature}-prd.md (product requirements)
-- docs/{feature}-tech.md (technical design)
+- docs/{scope}-prd.md (product requirements)
+- docs/{scope}-tech.md (technical design)
 
 ### Auto-Triggered:
 

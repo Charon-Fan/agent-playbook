@@ -16,12 +16,13 @@ Traditional PRD creation suffers from:
 
 ## The Solution
 
-Use a 3-file pattern that persists all thinking:
+Use a 4-file pattern that persists all thinking. Pick a SCOPE (short, unique, kebab-case slug) and prefix all files:
 
 ```text
-docs/prd-task-plan.md      → Progress tracking
-docs/prd-notes.md          → Research & requirements
-docs/{feature}-prd.md      → Final PRD output
+docs/{scope}-prd-task-plan.md → Progress tracking
+docs/{scope}-prd-notes.md     → Research & requirements
+docs/{scope}-prd.md           → Final PRD output
+docs/{scope}-tech.md          → Technical design output
 ```
 
 ## Installation
@@ -38,12 +39,13 @@ ln -s ~/Documents/code/GitHub/agent-playbook/skills/prd-planner/SKILL.md ~/.clau
 "Create a PRD for user authentication"
 
 # The skill will:
-# 1. Create 3 files in docs/
+# 1. Create 4 files in docs/
 # 2. Gather requirements (saved to notes)
 # 3. Research best practices (saved to notes)
 # 4. Design architecture (saved to notes)
 # 5. Synthesize into PRD (reads from notes)
-# 6. Validate with you
+# 6. Write technical design (reads from notes)
+# 7. Validate with you
 ```
 
 ## Workflow
@@ -53,12 +55,13 @@ ln -s ~/Documents/code/GitHub/agent-playbook/skills/prd-planner/SKILL.md ~/.clau
 │                     PRD Creation Workflow                       │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  1. Initialize → Create 3 files with template                   │
-│  2. Requirements → Gather to prd-notes.md                       │
+│  1. Initialize → Create 4 files with template                   │
+│  2. Requirements → Gather to {scope}-prd-notes.md               │
 │  3. Analysis → Research best practices, save to notes           │
 │  4. Design → Propose architecture, save to notes                │
 │  5. Synthesize → Read notes, write PRD, update plan             │
-│  6. Validate → Review with user, finalize                       │
+│  6. Tech → Write technical design from notes                    │
+│  7. Validate → Review with user, finalize                       │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -67,9 +70,10 @@ ln -s ~/Documents/code/GitHub/agent-playbook/skills/prd-planner/SKILL.md ~/.clau
 
 ```
 docs/
-├── prd-task-plan.md      # Progress tracking with checkboxes
-├── prd-notes.md          # All research and requirements
-└── {feature}-prd.md      # Final polished PRD
+├── {scope}-prd-task-plan.md  # Progress tracking with checkboxes
+├── {scope}-prd-notes.md      # All research and requirements
+├── {scope}-prd.md            # Final polished PRD
+└── {scope}-tech.md           # Technical design
 ```
 
 ## Key Principles
@@ -77,8 +81,8 @@ docs/
 | Principle | Implementation |
 |-----------|----------------|
 | Filesystem as memory | Store in files, not context |
-| Always read before deciding | Read notes.md before design decisions |
-| Update plan after phases | Checkboxes and timestamps in task_plan.md |
+| Always read before deciding | Read {scope}-prd-notes.md before design decisions |
+| Update plan after phases | Checkboxes and timestamps in {scope}-prd-task-plan.md |
 | One coherent workflow | Single skill, no context switching |
 
 ## Activation

@@ -62,8 +62,8 @@
 # prd-planner 自动执行
 Creating PRD using 4-file pattern...
 
-✓ docs/borrow-refresh-notes.md      # 思考过程
-✓ docs/borrow-refresh-task-plan.md  # 任务跟踪
+✓ docs/borrow-refresh-prd-notes.md      # 思考过程
+✓ docs/borrow-refresh-prd-task-plan.md  # 任务跟踪
 ✓ docs/borrow-refresh-prd.md        # 产品需求
 ✓ docs/borrow-refresh-tech.md       # 技术设计
 ```
@@ -253,8 +253,8 @@ Claude: 我看到了这个 UI 设计图。让我使用 prd-planner 创建 PRD...
 [调用 prd-planner 技能]
 
 ✓ 创建了 4 个文件：
-  - docs/borrow-refresh-notes.md
-  - docs/borrow-refresh-task-plan.md
+  - docs/borrow-refresh-prd-notes.md
+  - docs/borrow-refresh-prd-task-plan.md
   - docs/borrow-refresh-prd.md
   - docs/borrow-refresh-tech.md
 
