@@ -67,6 +67,7 @@ docs/{scope}-tech.md          → Technical design (how)
 │                                                                 │
 │  1. Initialize → Create 4 files with template                   │
 │  2. Requirements → Gather to {scope}-prd-notes.md               │
+│  2.5 Edge Cases → Scan codebase, infer patterns, ask smartly    │
 │  3. Analysis → Research best practices, save to notes           │
 │  4. Design → Propose architecture options (A/B/C), save to notes │
 │  5. PRD → Write product requirements to {scope}-prd.md          │
@@ -122,6 +123,23 @@ Create a PRD and technical design for {feature description}.
 ## Constraints
 (Add technical, business, time constraints)
 
+## Inferred Patterns (from codebase)
+
+| Edge Case | Source | Pattern Applied |
+|-----------|--------|-----------------|
+| (Filled after Step 2.5 codebase scan) | | |
+
+## Edge Cases
+
+### Auto-handled (following codebase patterns)
+- (Filled after Step 2.5 analysis)
+
+### Confirmed by User
+- (Filled after user confirms edge case decisions)
+
+### Open Questions
+- (Track questions to ask user)
+
 ## Research Findings
 (Add research on best practices, similar solutions)
 
@@ -140,9 +158,6 @@ Create a PRD and technical design for {feature description}.
   - Cons: {Disadvantages}
 
 **Selected**: Option {X}
-
-## Open Questions
-(Track questions to ask user)
 ```
 
 ### {scope}-prd.md
@@ -230,6 +245,53 @@ Save each answer to `{scope}-prd-notes.md` under appropriate section.
 **Always update `{scope}-prd-task-plan.md` after gathering info:**
 ```markdown
 - [x] Phase 2: Gather requirements ✓
+- [ ] Phase 2.5: Edge case analysis (CURRENT)
+- [ ] Phase 3: Research & analysis
+```
+
+## Step 2.5: Context-Aware Edge Case Analysis
+
+Before asking users about edge cases, **scan the codebase first** to infer existing patterns. This reduces redundant questions and ensures consistency with the project.
+
+> **Detailed reference**: See `references/edge-case-analysis.md` for full scanning commands and output formats.
+
+### Quick Process
+
+1. **Scan codebase** for existing patterns (delete strategy, error handling, empty states, pagination)
+2. **Identify requirement type** (CRUD, State Workflow, Async, Data Display, Form, File)
+3. **Generate smart assumptions** - patterns found in code don't need user confirmation
+4. **Ask only when needed** - no precedent, multiple patterns, or business decision required
+
+### When to Ask Users
+
+| Condition | Action |
+|-----------|--------|
+| Pattern exists in codebase | Auto-apply, no question needed |
+| No precedent found | Ask user with options |
+| Multiple conflicting patterns | Ask user to choose |
+| Business rule required | Ask user |
+
+### Output to Notes File
+
+Update `{scope}-prd-notes.md` with:
+
+```markdown
+## Inferred Patterns (from codebase)
+| Edge Case | Source | Pattern Applied |
+|-----------|--------|-----------------|
+| Delete | `src/models/User.ts:45` | Soft delete |
+
+## Edge Cases
+### Auto-handled (following codebase patterns)
+- Empty list → Use existing EmptyState component
+
+### Confirmed by User
+- Concurrent edit: Last write wins (confirmed {date})
+```
+
+**Update task plan:**
+```markdown
+- [x] Phase 2.5: Edge case analysis ✓
 - [ ] Phase 3: Research & analysis (CURRENT)
 ```
 
@@ -316,74 +378,21 @@ Review with user:
 
 ## Important Rules
 
-### ALWAYS Use Files (Never Memory Only)
-
-❌ **Bad**: Keep requirements in memory, then write PRD
-✅ **Good**: Save requirements to {scope}-prd-notes.md, then read and synthesize
-
-### ALWAYS Update Plan After Each Phase
-
-❌ **Bad**: Complete phase and move on
-✅ **Good**: Complete phase, update {scope}-prd-task-plan.md with checkbox and timestamp
-
-### ALWAYS Read Notes Before Decisions
-
-❌ **Bad**: Make design decisions from memory
-✅ **Good**: Read {scope}-prd-notes.md first, then decide
-
-### ALWAYS Separate PRD and Tech Doc
-
-❌ **Bad**: Mix product requirements with implementation details in one file
-✅ **Good**: PRD for "what & why", Tech doc for "how"
-
-### NEVER Skip The Planning Files
-
-❌ **Bad**: "Quick PRD" - skip straight to writing
-✅ **Good**: Even for quick PRDs, create the 4 files (it prevents rework)
-
-### ALWAYS Include Architecture Options (A/B/C)
-
-❌ **Bad**: Jump straight to chosen solution without alternatives
-✅ **Good**: Document 2-3 options with pros/cons, explain selection
+| Rule | Bad | Good |
+|------|-----|------|
+| Use Files | Keep in memory | Save to {scope}-prd-notes.md |
+| Update Plan | Move on without update | Update task-plan.md with checkbox |
+| Read Before Decide | Decide from memory | Read notes first |
+| Separate Docs | Mix PRD + Tech | PRD for "what", Tech for "how" |
+| Include Options | Jump to solution | Document 2-3 options with pros/cons |
 
 ## Phase Transitions
 
-```markdown
-# In {scope}-prd-task-plan.md, update like this:
-
-- [ ] Phase 2: Gather requirements
-- [x] Phase 3: Research & analysis ✓
-- [ ] Phase 4: Design solution (CURRENT)
-
-## Status
-**Currently in Phase 4** - Designing solution architecture
-
-## Progress Log
-- {timestamp} - Phase 3 complete: Researched 3 similar implementations
-- {timestamp} - Phase 4 started: Exploring architecture options
-```
+Update `{scope}-prd-task-plan.md` after each phase with checkbox ✓ and timestamp.
 
 ## Completing a PRD
 
-When all phases are done:
-
-```markdown
-## Phases
-- [x] Phase 1: Initialize files ✓
-- [x] Phase 2: Gather requirements ✓
-- [x] Phase 3: Research & analysis ✓
-- [x] Phase 4: Design solution ✓
-- [x] Phase 5: Write PRD ✓
-- [x] Phase 6: Write technical design ✓
-- [x] Phase 7: Validate & finalize ✓
-
-## Status
-✅ **COMPLETE** - PRD delivered to docs/{scope}-prd.md, Tech doc at docs/{scope}-tech.md
-
-## Progress Log
-- {timestamp} - PRD complete: docs/{scope}-prd.md
-- {timestamp} - Tech doc complete: docs/{scope}-tech.md
-```
+Mark all phases complete, set status to "✅ COMPLETE", log final deliverables.
 
 ## File Cleanup (Optional)
 
@@ -429,56 +438,12 @@ Phase 1: Initializing files
 
 - [planning-with-files](../planning-with-files/) - File-based planning methodology
 - [architecting-solutions](../architecting-solutions/) - PRD creation best practices
+- Edge case scanning: `references/edge-case-analysis.md`
 
 ---
 
 ## Auto-Trigger (Automation)
 
-When this skill completes (all phases checked ✅), automatically trigger:
-
-### 1. self-improving-agent (background)
-- **Mode**: background - runs without blocking
-- **Purpose**: Extract patterns and improve future PRDs
-- **Action**: Reads the PRD, extracts patterns, updates semantic memory
-
-### 2. session-logger (auto)
-- **Mode**: auto - executes immediately
-- **Purpose**: Save session context for future reference
-- **Action**: Creates session file with summary, decisions, files created
-
-### Workflow Visualization
-
-```
-prd-planner complete
-       │
-       ├──→ self-improving-agent (background) ──┐
-       │                                        │
-       └──→ session-logger (auto)               │
-                    │                           │
-                    └───────────────────────────┘
-                           (save session)
-```
-
-### Implementation
-
-After completing Phase 7, the skill should:
-
-1. **Check completion** - Verify all checkboxes are marked
-2. **Update status** - Set task plan status to "COMPLETE"
-3. **Trigger hooks** - Call the skills defined in `hooks:after_complete`
-4. **Inform user** - Show what was triggered and why
-
-```markdown
-## PRD Complete ✅
-
-All phases completed. Deliverables:
-- docs/{scope}-prd.md (product requirements)
-- docs/{scope}-tech.md (technical design)
-
-### Auto-Triggered:
-
-- [🔄] self-improving-agent (running in background)
-- [✓] session-logger (saved)
-
-Would you like to review the improvements or create a PR?
-```
+When this skill completes, automatically trigger:
+1. **self-improving-agent** (background) - Extract patterns
+2. **session-logger** (auto) - Save session context
