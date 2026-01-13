@@ -71,8 +71,8 @@ hooks:
 
 ```markdown
 Detected when:
-- docs/{feature}-prd.md exists
-- All phases in prd-task-plan.md are checked
+- docs/{scope}-prd.md exists
+- All phases in {scope}-prd-task-plan.md are checked
 - Status shows "COMPLETE"
 
 Actions:
@@ -240,13 +240,13 @@ Check for completion indicators:
 
 ```bash
 # PRD complete?
-grep -q "COMPLETE" docs/prd-task-plan.md
+grep -q "COMPLETE" docs/{scope}-prd-task-plan.md
 
 # All phases checked?
-grep -q "^\- \[x\].*Phase 6" docs/prd-task-plan.md
+grep -q "^\- \[x\].*Phase 6" docs/{scope}-prd-task-plan.md
 
 # PRD file exists?
-ls docs/{feature}-prd.md
+ls docs/{scope}-prd.md
 ```
 
 ### Step 2: Read Trigger Config
