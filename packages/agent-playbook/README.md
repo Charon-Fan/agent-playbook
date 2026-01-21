@@ -23,16 +23,18 @@ pnpm dlx @codeharbor/agent-playbook init --project
 - Records a metadata block in `~/.codex/config.toml`.
 
 ## Commands
-- `agent-playbook init [--project] [--copy] [--hooks] [--no-hooks] [--session-dir <path>] [--dry-run] [--repo <path>]`
+- `agent-playbook init [--project] [--copy] [--overwrite] [--hooks] [--no-hooks] [--session-dir <path>] [--dry-run] [--repo <path>]`
 - `agent-playbook status`
 - `agent-playbook doctor`
-- `agent-playbook repair`
+- `agent-playbook repair [--overwrite]`
 - `agent-playbook uninstall`
 - `agent-playbook session-log [--session-dir <path>]`
 - `agent-playbook self-improve`
 
 ## Notes
 - Default session logs go to repo `sessions/` if a Git root is found; otherwise `~/.claude/sessions/`.
+- If skill folders already exist, you will be prompted before overwriting. Use `--overwrite` to skip the prompt.
+- Session logs and self-improve entries record the agent-playbook version.
 - Hooks are merged without overwriting existing user hooks.
 - Requires Node.js 18+.
 
