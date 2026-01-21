@@ -2,25 +2,26 @@
 name: self-improving-agent
 description: A universal self-improving agent that learns from ALL skill experiences. Uses multi-memory architecture (semantic + episodic + working) to continuously evolve the codebase. Auto-triggers on skill completion/error with hooks-based self-correction.
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob, WebSearch
-hooks:
-  before_start:
-    - trigger: session-logger
-      mode: auto
-      context: "Start {skill_name}"
-  after_complete:
-    - trigger: create-pr
-      mode: ask_first
-      condition: skills_modified
-      reason: "Submit improvements to repository"
-    - trigger: session-logger
-      mode: auto
-      context: "Self-improvement cycle complete"
-  # Note: on_error intentionally only logs to session to avoid infinite recursion
-  # Self-correction is triggered by other skills (debugger, code-reviewer) completing their work
-  on_error:
-    - trigger: session-logger
-      mode: auto
-      context: "Error captured in {skill_name}"
+metadata:
+  hooks:
+    before_start:
+      - trigger: session-logger
+        mode: auto
+        context: "Start {skill_name}"
+    after_complete:
+      - trigger: create-pr
+        mode: ask_first
+        condition: skills_modified
+        reason: "Submit improvements to repository"
+      - trigger: session-logger
+        mode: auto
+        context: "Self-improvement cycle complete"
+    # Note: on_error intentionally only logs to session to avoid infinite recursion
+    # Self-correction is triggered by other skills (debugger, code-reviewer) completing their work
+    on_error:
+      - trigger: session-logger
+        mode: auto
+        context: "Error captured in {skill_name}"
 ---
 
 # Self-Improving Agent

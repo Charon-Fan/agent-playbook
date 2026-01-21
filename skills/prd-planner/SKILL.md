@@ -2,14 +2,15 @@
 name: prd-planner
 description: Creates PRDs using persistent file-based planning. Use when user explicitly says "PRD", "product requirements document", or "产品需求文档". Combines PRD methodology with planning-with-files to avoid context switching.
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob, AskUserQuestion, WebSearch
-hooks:
-  after_complete:
-    - trigger: self-improving-agent
-      mode: background
-      reason: "Extract patterns and improve PRD quality"
-    - trigger: session-logger
-      mode: auto
-      reason: "Save session context"
+metadata:
+  hooks:
+    after_complete:
+      - trigger: self-improving-agent
+        mode: background
+        reason: "Extract patterns and improve PRD quality"
+      - trigger: session-logger
+        mode: auto
+        reason: "Save session context"
 ---
 
 # PRD Planner
