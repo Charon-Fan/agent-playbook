@@ -10,6 +10,22 @@
 
 ## 安装
 
+### 方法零：一键安装（PNPM/NPM）
+
+为 Claude Code 和 Codex 配置技能，并接入会话日志与自我进化 hooks。
+
+```bash
+pnpm dlx @codeharbor/agent-playbook init
+# 或者
+npm exec -- @codeharbor/agent-playbook init
+```
+
+仅项目级安装：
+
+```bash
+pnpm dlx @codeharbor/agent-playbook init --project
+```
+
 ### 方法一：符号链接（推荐）
 
 将技能链接到全局 Claude Code 技能目录：
