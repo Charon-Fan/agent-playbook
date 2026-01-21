@@ -1,11 +1,12 @@
 {
   "name": "@codeharbor/agent-playbook",
-  "version": "0.1.3",
-  "description": "One-click installer and workflow fixer for agent-playbook across Claude Code and Codex.",
+  "version": "0.2.0",
+  "description": "Local skill manager and installer for agent-playbook across Claude Code, Codex, and Gemini.",
   "license": "MIT",
   "type": "commonjs",
   "bin": {
-    "agent-playbook": "bin/agent-playbook.js"
+    "agent-playbook": "bin/agent-playbook.js",
+    "apb": "bin/agent-playbook.js"
   },
   "scripts": {
     "test": "node --test test/*.test.js",

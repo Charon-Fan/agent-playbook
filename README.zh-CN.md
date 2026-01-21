@@ -12,7 +12,7 @@
 
 ### 方法零：一键安装（PNPM/NPM）
 
-为 Claude Code 和 Codex 配置技能，并接入会话日志与自我进化 hooks。
+为 Claude Code、Codex 和 Gemini 配置技能，并接入会话日志与自我进化 hooks。
 
 ```bash
 pnpm dlx @codeharbor/agent-playbook init
@@ -28,11 +28,13 @@ pnpm dlx @codeharbor/agent-playbook init --project
 
 ### 方法一：符号链接（推荐）
 
-将技能链接到全局 Claude Code 技能目录：
+将技能链接到全局技能目录：
 
 ```bash
 # 为每个技能创建符号链接
 ln -s /path/to/agent-playbook/skills/* ~/.claude/skills/
+ln -s /path/to/agent-playbook/skills/* ~/.codex/skills/
+ln -s /path/to/agent-playbook/skills/* ~/.gemini/skills/
 ```
 
 示例：
@@ -46,19 +48,23 @@ ln -s ~/Documents/code/GitHub/agent-playbook/skills/planning-with-files ~/.claud
 
 ### 方法二：复制技能
 
-直接将技能复制到全局 Claude Code 目录：
+直接将技能复制到全局技能目录：
 
 ```bash
 cp -r /path/to/agent-playbook/skills/* ~/.claude/skills/
+cp -r /path/to/agent-playbook/skills/* ~/.codex/skills/
+cp -r /path/to/agent-playbook/skills/* ~/.gemini/skills/
 ```
 
 ### 方法三：添加到项目特定技能
 
-用于项目特定用途，在项目中创建 `.claude/skills` 目录：
+用于项目特定用途，在项目中创建 `.claude/.codex/.gemini` 技能目录：
 
 ```bash
-mkdir -p .claude/skills
+mkdir -p .claude/skills .codex/skills .gemini/skills
 cp -r /path/to/agent-playbook/skills/* .claude/skills/
+cp -r /path/to/agent-playbook/skills/* .codex/skills/
+cp -r /path/to/agent-playbook/skills/* .gemini/skills/
 ```
 
 ### 验证安装
@@ -67,7 +73,20 @@ cp -r /path/to/agent-playbook/skills/* .claude/skills/
 
 ```bash
 ls -la ~/.claude/skills/
+ls -la ~/.codex/skills/
+ls -la ~/.gemini/skills/
 ```
+
+## 技能管理
+
+使用本地技能管理器查看并管理项目与全局范围的技能：
+
+```bash
+apb skills list --scope both --target all
+apb skills add ./skills/my-skill --scope project --target claude
+```
+
+`apb` 是 `agent-playbook` 的短别名。
 
 ## 项目结构
 
