@@ -58,11 +58,11 @@ git diff --name-only main..HEAD | grep "^skills/"
 
 ### Auto-Trigger Changes Require Update
 
-If a skill's `hooks:` front matter was modified, the **Auto-Trigger** column in the Skills Catalog must be updated:
+If a skill's `metadata.hooks` front matter was modified, the **Auto-Trigger** column in the Skills Catalog must be updated:
 
 ```bash
 # Check if hooks were modified
-git diff main..HEAD -- skills/*/SKILL.md | grep -E "^\+.*hooks:|^\+.*trigger:"
+git diff main..HEAD -- skills/*/SKILL.md | grep -E "^\+.*metadata:|^\+.*hooks:|^\+.*trigger:"
 ```
 
 If hooks changed → Update README.md and README.zh-CN.md Auto-Trigger column.

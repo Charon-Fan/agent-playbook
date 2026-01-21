@@ -2,18 +2,19 @@
 name: figma-designer
 description: Analyzes Figma designs and generates implementation-ready PRDs with detailed visual specifications. Use when user provides Figma link or uploads design screenshots. Requires Figma MCP server connection.
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob, WebFetch, WebSearch, AskUserQuestion
-hooks:
-  after_complete:
-    - trigger: prd-planner
-      mode: ask_first
-      condition: prd_generated
-      reason: "Further refine PRD with 4-file pattern"
-    - trigger: self-improving-agent
-      mode: background
-      reason: "Learn design patterns for future reference"
-    - trigger: session-logger
-      mode: auto
-      reason: "Save design analysis session"
+metadata:
+  hooks:
+    after_complete:
+      - trigger: prd-planner
+        mode: ask_first
+        condition: prd_generated
+        reason: "Further refine PRD with 4-file pattern"
+      - trigger: self-improving-agent
+        mode: background
+        reason: "Learn design patterns for future reference"
+      - trigger: session-logger
+        mode: auto
+        reason: "Save design analysis session"
 ---
 
 # Figma Designer

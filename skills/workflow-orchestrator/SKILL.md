@@ -2,11 +2,12 @@
 name: workflow-orchestrator
 description: Automatically coordinates multi-skill workflows and triggers follow-up actions. Use when completing PRD creation, implementation, or any milestone that should trigger additional skills. This skill reads the auto-trigger configuration and executes the workflow chain.
 allowed-tools: Read, Write, Edit, Bash, Grep, AskUserQuestion
-hooks:
-  after_complete:
-    - trigger: session-logger
-      mode: auto
-      reason: "Save workflow execution context"
+metadata:
+  hooks:
+    after_complete:
+      - trigger: session-logger
+        mode: auto
+        reason: "Save workflow execution context"
 ---
 
 # Workflow Orchestrator
