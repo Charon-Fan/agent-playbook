@@ -8,6 +8,9 @@ const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 
 const binPath = path.resolve(__dirname, "..", "bin", "agent-playbook.js");
+const packageVersion = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "..", "package.json"), "utf8")
+).version;
 
 function makeTempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "agent-playbook-"));
@@ -57,4 +60,8 @@ test("session-log writes summary with commands and questions", () => {
   assert.match(content, /Commands detected: 1/);
   assert.match(content, /ls -la/);
   assert.match(content, /What next\?/);
+  assert.match(
+    content,
+    new RegExp(`\\*\\*Agent Playbook Version\\*\\*: ${packageVersion.replace(/\./g, "\\.")}`)
+  );
 });

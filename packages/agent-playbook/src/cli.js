@@ -48,10 +48,10 @@ function printHelp() {
     `${APP_NAME} ${VERSION}`,
     "",
     "Usage:",
-    `  ${APP_NAME} init [--project] [--copy] [--hooks] [--no-hooks] [--session-dir <path>] [--dry-run] [--repo <path>]`,
+    `  ${APP_NAME} init [--project] [--copy] [--overwrite] [--hooks] [--no-hooks] [--session-dir <path>] [--dry-run] [--repo <path>]`,
     `  ${APP_NAME} status [--project] [--repo <path>]`,
     `  ${APP_NAME} doctor [--project] [--repo <path>]`,
-    `  ${APP_NAME} repair [--project] [--repo <path>]`,
+    `  ${APP_NAME} repair [--project] [--overwrite] [--repo <path>]`,
     `  ${APP_NAME} uninstall [--project] [--repo <path>]`,
     "",
     "Hook commands:",
@@ -116,6 +116,7 @@ function handleInit(options, context) {
   const hooksEnabled = options.hooks !== false;
   const repoRoot = settings.repoRoot;
   const warnings = [];
+  const overwriteState = createOverwriteState(options);
 
   if (!settings.skillsSource) {
     if (options.repair) {
@@ -143,8 +144,8 @@ function handleInit(options, context) {
   let claudeLinks = { created: [], skipped: [] };
   let codexLinks = { created: [], skipped: [] };
   if (settings.skillsSource) {
-    claudeLinks = linkSkills(settings.skillsSource, settings.claudeSkillsDir, options);
-    codexLinks = linkSkills(settings.skillsSource, settings.codexSkillsDir, options);
+    claudeLinks = linkSkills(settings.skillsSource, settings.claudeSkillsDir, options, overwriteState);
+    codexLinks = linkSkills(settings.skillsSource, settings.codexSkillsDir, options, overwriteState);
     manifest.links.claude = claudeLinks.created;
     manifest.links.codex = codexLinks.created;
 
@@ -251,6 +252,7 @@ async function handleSelfImprove(options) {
     session_id: sessionId,
     cwd,
     transcript_path: transcriptPath,
+    agent_playbook_version: VERSION,
     hook_event: input.hook_event_name || "PostToolUse",
     tool_name: input.tool_name || "",
     tool_input: input.tool_input || "",
@@ -339,9 +341,65 @@ function resolveSkillsSource(candidates) {
   return null;
 }
 
-function linkSkills(sourceDir, targetDir, options) {
+function createOverwriteState(options) {
+  return {
+    decision: options.overwrite === true ? true : null,
+    prompted: false,
+    nonInteractive: false,
+  };
+}
+
+function promptYesNo(question, defaultYes) {
+  const suffix = defaultYes ? "[Y/n]" : "[y/N]";
+  process.stdout.write(`${question} ${suffix} `);
+  const answer = readLineSync().toLowerCase();
+  if (!answer) {
+    return defaultYes;
+  }
+  return answer === "y" || answer === "yes";
+}
+
+function readLineSync() {
+  const buffer = Buffer.alloc(1024);
+  let input = "";
+  while (true) {
+    const bytes = fs.readSync(0, buffer, 0, buffer.length, null);
+    if (bytes <= 0) {
+      break;
+    }
+    input += buffer.toString("utf8", 0, bytes);
+    if (input.includes("\n")) {
+      break;
+    }
+  }
+  return input.trim();
+}
+
+function shouldOverwriteExisting(options, state, targetPath) {
+  if (options.overwrite) {
+    state.decision = true;
+    return true;
+  }
+  if (!process.stdin.isTTY || !process.stdout.isTTY) {
+    state.nonInteractive = true;
+    return false;
+  }
+  if (state.decision !== null) {
+    return state.decision;
+  }
+  state.prompted = true;
+  state.decision = promptYesNo(
+    `Existing skill found at ${targetPath}. Overwrite all existing skills?`,
+    false
+  );
+  return state.decision;
+}
+
+function linkSkills(sourceDir, targetDir, options, overwriteState) {
   const created = [];
   const skipped = [];
+  const overwritten = [];
+  const state = overwriteState || createOverwriteState(options);
   const entries = fs.readdirSync(sourceDir, { withFileTypes: true });
 
   entries.forEach((entry) => {
@@ -364,8 +422,14 @@ function linkSkills(sourceDir, targetDir, options) {
         skipped.push({ source: skillDir, target: targetPath, reason: "already linked" });
         return;
       }
-      skipped.push({ source: skillDir, target: targetPath, reason: "exists" });
-      return;
+      if (!shouldOverwriteExisting(options, state, targetPath)) {
+        skipped.push({ source: skillDir, target: targetPath, reason: "exists" });
+        return;
+      }
+      overwritten.push({ source: skillDir, target: targetPath });
+      if (!options["dry-run"]) {
+        safeUnlink(targetPath);
+      }
     }
 
     if (options["dry-run"]) {
@@ -389,7 +453,7 @@ function linkSkills(sourceDir, targetDir, options) {
     }
   });
 
-  return { created, skipped };
+  return { created, skipped, overwritten };
 }
 
 function ensureLocalCli(settings, context, options) {
@@ -800,6 +864,7 @@ function buildSessionSummary(insights, sessionId, cwd) {
     `**Date**: ${date}`,
     `**Duration**: unknown`,
     `**Context**: ${repoRoot}`,
+    `**Agent Playbook Version**: ${VERSION}`,
     "",
     "## Summary",
     "Auto-generated session log.",
@@ -907,6 +972,12 @@ function printInitSummary(settings, hooksEnabled, options, claudeLinks, codexLin
   console.log(`- Codex skills: ${settings.codexSkillsDir}`);
   console.log(`- Hooks: ${hooksEnabled ? "enabled" : "disabled"}`);
   console.log(`- Linked skills: ${claudeLinks.created.length + codexLinks.created.length}`);
+  const overwrittenCount =
+    (claudeLinks.overwritten ? claudeLinks.overwritten.length : 0) +
+    (codexLinks.overwritten ? codexLinks.overwritten.length : 0);
+  if (overwrittenCount) {
+    console.log(`- Overwritten skills: ${overwrittenCount}`);
+  }
   if (claudeLinks.skipped.length || codexLinks.skipped.length) {
     console.log("- Some skills were skipped due to existing paths.");
   }
@@ -1064,6 +1135,7 @@ function handleRepair(options, context) {
   const settings = resolveSettings(options, context);
   const status = collectStatus(settings);
   const warnings = [];
+  const overwriteState = createOverwriteState(options);
 
   if (!settings.skillsSource) {
     warnings.push("Skills directory not found; skipping skill linking.");
@@ -1094,8 +1166,8 @@ function handleRepair(options, context) {
   }
 
   if (settings.skillsSource) {
-    linkSkills(settings.skillsSource, settings.claudeSkillsDir, options);
-    linkSkills(settings.skillsSource, settings.codexSkillsDir, options);
+    linkSkills(settings.skillsSource, settings.claudeSkillsDir, options, overwriteState);
+    linkSkills(settings.skillsSource, settings.codexSkillsDir, options, overwriteState);
     if (!options["dry-run"]) {
       const manifestPath = path.join(settings.claudeSkillsDir, ".agent-playbook.json");
       if (!fs.existsSync(manifestPath)) {

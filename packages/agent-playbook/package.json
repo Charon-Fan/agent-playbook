@@ -1,6 +1,6 @@
 {
   "name": "@codeharbor/agent-playbook",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "One-click installer and workflow fixer for agent-playbook across Claude Code and Codex.",
   "license": "MIT",
   "type": "commonjs",
