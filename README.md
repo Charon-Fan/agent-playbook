@@ -12,7 +12,7 @@ This repository organizes and stores practical resources for working with AI Age
 
 ### Method 0: One-Command Installer (PNPM/NPM)
 
-Sets up skills for Claude Code and Codex, and wires hooks for session logging and self-improvement.
+Sets up skills for Claude Code, Codex, and Gemini, and wires hooks for session logging and self-improvement.
 
 ```bash
 pnpm dlx @codeharbor/agent-playbook init
@@ -28,11 +28,13 @@ pnpm dlx @codeharbor/agent-playbook init --project
 
 ### Method 1: Symbolic Links (Recommended)
 
-Link the skills to your global Claude Code skills directory:
+Link the skills to your global skills directories:
 
 ```bash
 # Create symbolic links for each skill
 ln -s /path/to/agent-playbook/skills/* ~/.claude/skills/
+ln -s /path/to/agent-playbook/skills/* ~/.codex/skills/
+ln -s /path/to/agent-playbook/skills/* ~/.gemini/skills/
 ```
 
 Example:
@@ -46,19 +48,23 @@ ln -s ~/Documents/code/GitHub/agent-playbook/skills/planning-with-files ~/.claud
 
 ### Method 2: Copy Skills
 
-Copy the skills directly to your global Claude Code directory:
+Copy the skills directly to your global skills directories:
 
 ```bash
 cp -r /path/to/agent-playbook/skills/* ~/.claude/skills/
+cp -r /path/to/agent-playbook/skills/* ~/.codex/skills/
+cp -r /path/to/agent-playbook/skills/* ~/.gemini/skills/
 ```
 
 ### Method 3: Add to Project-Specific Skills
 
-For project-specific usage, create a `.claude/skills` directory in your project:
+For project-specific usage, create `.claude/.codex/.gemini` skills directories in your project:
 
 ```bash
-mkdir -p .claude/skills
+mkdir -p .claude/skills .codex/skills .gemini/skills
 cp -r /path/to/agent-playbook/skills/* .claude/skills/
+cp -r /path/to/agent-playbook/skills/* .codex/skills/
+cp -r /path/to/agent-playbook/skills/* .gemini/skills/
 ```
 
 ### Verify Installation
@@ -67,7 +73,20 @@ List your installed skills:
 
 ```bash
 ls -la ~/.claude/skills/
+ls -la ~/.codex/skills/
+ls -la ~/.gemini/skills/
 ```
+
+## Skills Manager
+
+Use the local-only skills manager to inspect and manage skills across project and global scopes:
+
+```bash
+apb skills list --scope both --target all
+apb skills add ./skills/my-skill --scope project --target claude
+```
+
+`apb` is a short alias for `agent-playbook`.
 
 ## Project Structure
 

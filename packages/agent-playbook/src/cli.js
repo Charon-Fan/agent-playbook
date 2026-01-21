@@ -10,6 +10,8 @@ const SKILLS_DIR_NAME = "skills";
 const DEFAULT_SESSION_DIR = "sessions";
 const LOCAL_CLI_DIR = "agent-playbook";
 const HOOK_SOURCE_VALUE = "agent-playbook";
+const STATE_FILE_NAME = "state.json";
+const DISABLED_DIR_NAME = ".disabled";
 
 const packageJson = readJsonSafe(path.join(__dirname, "..", "package.json"));
 const VERSION = packageJson.version || "0.0.0";
@@ -34,6 +36,8 @@ function main(argv, context) {
       return handleSessionLog(options);
     case "self-improve":
       return handleSelfImprove(options);
+    case "skills":
+      return handleSkills(options, parsed.positionals, context);
     case "help":
     case "--help":
     case "-h":
@@ -53,6 +57,7 @@ function printHelp() {
     `  ${APP_NAME} doctor [--project] [--repo <path>]`,
     `  ${APP_NAME} repair [--project] [--overwrite] [--repo <path>]`,
     `  ${APP_NAME} uninstall [--project] [--repo <path>]`,
+    `  ${APP_NAME} skills [list|info|add|remove|enable|disable|doctor|sync|upgrade|export|import]`,
     "",
     "Hook commands:",
     `  ${APP_NAME} session-log [--session-dir <path>]`,
@@ -62,7 +67,18 @@ function printHelp() {
 }
 
 function parseArgs(argv) {
-  const valueFlags = new Set(["session-dir", "repo", "transcript-path", "cwd", "hook-source"]);
+  const valueFlags = new Set([
+    "session-dir",
+    "repo",
+    "transcript-path",
+    "cwd",
+    "hook-source",
+    "scope",
+    "target",
+    "format",
+    "source",
+    "output",
+  ]);
   const options = {};
   const positionals = [];
   let command = null;
@@ -128,6 +144,7 @@ function handleInit(options, context) {
 
   ensureDir(settings.claudeSkillsDir, options["dry-run"]);
   ensureDir(settings.codexSkillsDir, options["dry-run"]);
+  ensureDir(settings.geminiSkillsDir, options["dry-run"]);
 
   const manifest = {
     name: APP_NAME,
@@ -138,16 +155,20 @@ function handleInit(options, context) {
     links: {
       claude: [],
       codex: [],
+      gemini: [],
     },
   };
 
   let claudeLinks = { created: [], skipped: [] };
   let codexLinks = { created: [], skipped: [] };
+  let geminiLinks = { created: [], skipped: [] };
   if (settings.skillsSource) {
     claudeLinks = linkSkills(settings.skillsSource, settings.claudeSkillsDir, options, overwriteState);
     codexLinks = linkSkills(settings.skillsSource, settings.codexSkillsDir, options, overwriteState);
+    geminiLinks = linkSkills(settings.skillsSource, settings.geminiSkillsDir, options, overwriteState);
     manifest.links.claude = claudeLinks.created;
     manifest.links.codex = codexLinks.created;
+    manifest.links.gemini = geminiLinks.created;
 
     if (!options["dry-run"]) {
       writeJson(path.join(settings.claudeSkillsDir, ".agent-playbook.json"), manifest);
@@ -164,7 +185,7 @@ function handleInit(options, context) {
 
   updateCodexConfig(settings, options);
 
-  printInitSummary(settings, hooksEnabled, options, claudeLinks, codexLinks, warnings);
+  printInitSummary(settings, hooksEnabled, options, claudeLinks, codexLinks, geminiLinks, warnings);
   return Promise.resolve();
 }
 
@@ -200,6 +221,7 @@ function handleUninstall(options, context) {
   if (manifest && manifest.links) {
     removeLinks(manifest.links.claude || []);
     removeLinks(manifest.links.codex || []);
+    removeLinks(manifest.links.gemini || []);
     safeUnlink(manifestPath);
   } else {
     console.log("No manifest found. Skipping link removal.");
@@ -266,39 +288,84 @@ async function handleSelfImprove(options) {
   console.error(`Self-improvement entry saved to ${entryPath}`);
 }
 
+function handleSkills(options, positionals, context) {
+  const settings = resolveSettings(options, context || {});
+  const subcommand = positionals[0] || "list";
+  const args = positionals.slice(1);
+
+  switch (subcommand) {
+    case "list":
+      return handleSkillsList(options, args, settings);
+    case "info":
+      return handleSkillsInfo(options, args, settings);
+    case "add":
+      return handleSkillsAdd(options, args, settings);
+    case "remove":
+      return handleSkillsRemove(options, args, settings);
+    case "enable":
+      return handleSkillsEnable(options, args, settings);
+    case "disable":
+      return handleSkillsDisable(options, args, settings);
+    case "doctor":
+      return handleSkillsDoctor(options, args, settings);
+    case "sync":
+      return handleSkillsSync(options, args, settings);
+    case "upgrade":
+      return handleSkillsUpgrade(options, args, settings);
+    case "export":
+      return handleSkillsExport(options, args, settings);
+    case "import":
+      return handleSkillsImport(options, args, settings);
+    default:
+      console.error(`Unknown skills subcommand: ${subcommand}`);
+      return Promise.resolve();
+  }
+}
+
 function resolveSettings(options, context) {
   const cwd = process.cwd();
-  const repoRoot = options.repo ? path.resolve(options.repo) : findRepoRoot(cwd);
+  const repoRootDetected = options.repo ? path.resolve(options.repo) : findRepoRoot(cwd);
   const cliRoot =
     context && context.cliPath ? path.resolve(path.dirname(context.cliPath), "..") : null;
-  const skillsSource = resolveSkillsSource([repoRoot || cwd, cliRoot]);
+  const skillsSource = resolveSkillsSource([repoRootDetected || cwd, cliRoot]);
   const projectMode = Boolean(options.project);
 
   const envClaudeDir = process.env.AGENT_PLAYBOOK_CLAUDE_DIR;
   const envCodexDir = process.env.AGENT_PLAYBOOK_CODEX_DIR;
-  const claudeDir = envClaudeDir
-    ? path.resolve(envClaudeDir)
-    : projectMode
-      ? path.join(repoRoot || cwd, ".claude")
-      : path.join(os.homedir(), ".claude");
-  const codexDir = envCodexDir
-    ? path.resolve(envCodexDir)
-    : projectMode
-      ? path.join(repoRoot || cwd, ".codex")
-      : path.join(os.homedir(), ".codex");
+  const envGeminiDir = process.env.AGENT_PLAYBOOK_GEMINI_DIR;
+  const globalClaudeDir = envClaudeDir ? path.resolve(envClaudeDir) : path.join(os.homedir(), ".claude");
+  const globalCodexDir = envCodexDir ? path.resolve(envCodexDir) : path.join(os.homedir(), ".codex");
+  const globalGeminiDir = envGeminiDir ? path.resolve(envGeminiDir) : path.join(os.homedir(), ".gemini");
+  const projectRoot = repoRootDetected || cwd;
+  const projectClaudeDir = repoRootDetected ? path.join(repoRootDetected, ".claude") : null;
+  const projectCodexDir = repoRootDetected ? path.join(repoRootDetected, ".codex") : null;
+  const projectGeminiDir = repoRootDetected ? path.join(repoRootDetected, ".gemini") : null;
+  const claudeDir = projectMode ? path.join(projectRoot, ".claude") : globalClaudeDir;
+  const codexDir = projectMode ? path.join(projectRoot, ".codex") : globalCodexDir;
+  const geminiDir = projectMode ? path.join(projectRoot, ".gemini") : globalGeminiDir;
 
   return {
     cwd,
-    repoRoot: repoRoot || cwd,
+    repoRoot: repoRootDetected || cwd,
+    repoRootDetected,
     skillsSource,
     projectMode,
     cliPath: context && context.cliPath ? context.cliPath : null,
     claudeDir,
     codexDir,
+    geminiDir,
+    globalClaudeDir,
+    globalCodexDir,
+    globalGeminiDir,
+    projectClaudeDir,
+    projectCodexDir,
+    projectGeminiDir,
     claudeSkillsDir: path.join(claudeDir, SKILLS_DIR_NAME),
     codexSkillsDir: path.join(codexDir, SKILLS_DIR_NAME),
+    geminiSkillsDir: path.join(geminiDir, SKILLS_DIR_NAME),
     claudeSettingsPath: path.join(claudeDir, "settings.json"),
     codexConfigPath: path.join(codexDir, "config.toml"),
+    statePath: path.join(globalClaudeDir, LOCAL_CLI_DIR, STATE_FILE_NAME),
   };
 }
 
@@ -384,29 +451,29 @@ function readLineSync() {
     }
   }
 
-  while (true) {
-    let bytes = 0;
-    try {
-      bytes = fs.readSync(fd, buffer, 0, buffer.length, null);
-    } catch (error) {
-      if (error && error.code === "EAGAIN") {
-        continue;
+  try {
+    while (true) {
+      let bytes = 0;
+      try {
+        bytes = fs.readSync(fd, buffer, 0, buffer.length, null);
+      } catch (error) {
+        throw error;
       }
-      throw error;
+      if (bytes <= 0) {
+        break;
+      }
+      input += buffer.toString("utf8", 0, bytes);
+      if (input.includes("\n")) {
+        break;
+      }
     }
-    if (bytes <= 0) {
-      break;
-    }
-    input += buffer.toString("utf8", 0, bytes);
-    if (input.includes("\n")) {
-      break;
-    }
-  }
-  if (shouldClose) {
-    try {
-      fs.closeSync(fd);
-    } catch (error) {
-      return input.trim();
+  } finally {
+    if (shouldClose) {
+      try {
+        fs.closeSync(fd);
+      } catch (error) {
+        // Best-effort close; ignore failures.
+      }
     }
   }
   return input.trim();
@@ -437,6 +504,7 @@ function linkSkills(sourceDir, targetDir, options, overwriteState) {
   const skipped = [];
   const overwritten = [];
   const state = overwriteState || createOverwriteState(options);
+  const installMode = resolveInstallMode(options, "link");
   const entries = fs.readdirSync(sourceDir, { withFileTypes: true });
 
   entries.forEach((entry) => {
@@ -470,11 +538,11 @@ function linkSkills(sourceDir, targetDir, options, overwriteState) {
     }
 
     if (options["dry-run"]) {
-      created.push({ source: skillDir, target: targetPath, mode: options.copy ? "copy" : "link", dryRun: true });
+      created.push({ source: skillDir, target: targetPath, mode: installMode, dryRun: true });
       return;
     }
 
-    if (options.copy) {
+    if (installMode === "copy") {
       fs.cpSync(skillDir, targetPath, { recursive: true });
       created.push({ source: skillDir, target: targetPath, mode: "copy" });
       return;
@@ -491,6 +559,1171 @@ function linkSkills(sourceDir, targetDir, options, overwriteState) {
   });
 
   return { created, skipped, overwritten };
+}
+
+function buildSkillEnvironment(settings) {
+  const projectRoot = settings.repoRootDetected;
+  const scopeDirs = {
+    project: projectRoot
+      ? {
+          claude: path.join(projectRoot, ".claude", SKILLS_DIR_NAME),
+          codex: path.join(projectRoot, ".codex", SKILLS_DIR_NAME),
+          gemini: path.join(projectRoot, ".gemini", SKILLS_DIR_NAME),
+        }
+      : null,
+    global: {
+      claude: path.join(settings.globalClaudeDir, SKILLS_DIR_NAME),
+      codex: path.join(settings.globalCodexDir, SKILLS_DIR_NAME),
+      gemini: path.join(settings.globalGeminiDir, SKILLS_DIR_NAME),
+    },
+  };
+
+  return {
+    projectRoot,
+    scopeDirs,
+    statePath: settings.statePath,
+    skillsSource: settings.skillsSource,
+  };
+}
+
+function normalizeScopeList(scopeValue, projectRoot, defaultScope) {
+  const warnings = [];
+  const value = String(scopeValue || defaultScope || "both").toLowerCase();
+  let scopes = [];
+  if (value === "both" || value === "all") {
+    scopes = ["project", "global"];
+  } else if (value === "project" || value === "repo") {
+    scopes = ["project"];
+  } else if (value === "global") {
+    scopes = ["global"];
+  } else {
+    warnings.push(`Unknown scope "${scopeValue}", defaulting to both.`);
+    scopes = ["project", "global"];
+  }
+
+  if (!projectRoot) {
+    if (scopes.includes("project")) {
+      warnings.push("Project scope requested but no repo root detected; skipping project scope.");
+    }
+    scopes = scopes.filter((scope) => scope !== "project");
+  }
+
+  if (!scopes.length) {
+    scopes = ["global"];
+  }
+
+  return { scopes, warnings };
+}
+
+function normalizeTargetList(targetValue, defaultTarget) {
+  const warnings = [];
+  const value = String(targetValue || defaultTarget || "both").toLowerCase();
+  let targets = [];
+  if (value === "both" || value === "all") {
+    targets = ["claude", "codex", "gemini"];
+  } else if (value === "claude" || value === "codex" || value === "gemini") {
+    targets = [value];
+  } else {
+    warnings.push(`Unknown target "${targetValue}", defaulting to all.`);
+    targets = ["claude", "codex", "gemini"];
+  }
+  return { targets, warnings };
+}
+
+function resolveInstallMode(options, fallbackMode) {
+  if (options && options.link) {
+    return "link";
+  }
+  if (options && options.copy) {
+    return "copy";
+  }
+  return fallbackMode || "link";
+}
+
+function createEmptyState() {
+  return {
+    version: "1",
+    updated_at: new Date().toISOString(),
+    skills: [],
+  };
+}
+
+function loadStateFile(statePath) {
+  if (!fs.existsSync(statePath)) {
+    return createEmptyState();
+  }
+  try {
+    const parsed = JSON.parse(fs.readFileSync(statePath, "utf8"));
+    if (!parsed || typeof parsed !== "object") {
+      throw new Error("Invalid state file");
+    }
+    if (!Array.isArray(parsed.skills)) {
+      parsed.skills = [];
+    }
+    if (!parsed.version) {
+      parsed.version = "1";
+    }
+    if (!parsed.updated_at) {
+      parsed.updated_at = new Date().toISOString();
+    }
+    return parsed;
+  } catch (error) {
+    console.error("Warning: unable to parse state.json, recreating state file.");
+    return createEmptyState();
+  }
+}
+
+function saveStateFile(statePath, state, dryRun) {
+  if (dryRun) {
+    return;
+  }
+  ensureDir(path.dirname(statePath), false);
+  fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
+}
+
+function stateKey(name, scope, target) {
+  return `${target}:${scope}:${name}`;
+}
+
+function indexStateEntries(state) {
+  const map = new Map();
+  (state.skills || []).forEach((entry) => {
+    if (!entry || !entry.name) {
+      return;
+    }
+    map.set(stateKey(entry.name, entry.scope, entry.target), entry);
+  });
+  return map;
+}
+
+function listBuiltInSkills(skillsSource) {
+  if (!skillsSource || !fs.existsSync(skillsSource)) {
+    return [];
+  }
+  return fs
+    .readdirSync(skillsSource, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .filter((name) => fs.existsSync(path.join(skillsSource, name, "SKILL.md")))
+    .sort();
+}
+
+function resolveSkillInput(input, env) {
+  if (!input) {
+    return { error: "Missing skill name or path." };
+  }
+
+  const resolvedPath = path.resolve(input);
+  if (fs.existsSync(resolvedPath)) {
+    const stat = fs.statSync(resolvedPath);
+    const skillDir = stat.isDirectory() ? resolvedPath : path.dirname(resolvedPath);
+    const skillFile = path.join(skillDir, "SKILL.md");
+    if (!fs.existsSync(skillFile)) {
+      return { error: `SKILL.md not found in ${skillDir}` };
+    }
+    return { name: path.basename(skillDir), sourceDir: skillDir, kind: "path" };
+  }
+
+  const skillsSource = env.skillsSource;
+  if (!skillsSource) {
+    return { error: "No bundled skills directory found. Use a local path instead." };
+  }
+
+  const candidate = path.join(skillsSource, input);
+  if (!fs.existsSync(path.join(candidate, "SKILL.md"))) {
+    const available = listBuiltInSkills(skillsSource);
+    const sample = available.length ? ` Available: ${available.join(", ")}` : "";
+    return { error: `Skill "${input}" not found in bundled skills.${sample}` };
+  }
+
+  return { name: input, sourceDir: candidate, kind: "name" };
+}
+
+function scanSkills(scopeDirs, scopes, targets, stateIndex) {
+  const records = [];
+  const warnings = [];
+
+  scopes.forEach((scope) => {
+    const dirs = scopeDirs[scope];
+    if (!dirs) {
+      warnings.push(`Scope "${scope}" not available.`);
+      return;
+    }
+    targets.forEach((target) => {
+      const dirPath = dirs[target];
+      if (!dirPath) {
+        warnings.push(`Target "${target}" not available for scope "${scope}".`);
+        return;
+      }
+      records.push(...scanSkillDir(dirPath, scope, target, stateIndex));
+    });
+  });
+
+  markDuplicates(records);
+  return { records, warnings };
+}
+
+function scanSkillDir(dirPath, scope, target, stateIndex) {
+  if (!dirPath || !fs.existsSync(dirPath)) {
+    return [];
+  }
+
+  const records = [];
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  const disabledDir = path.join(dirPath, DISABLED_DIR_NAME);
+
+  entries.forEach((entry) => {
+    if (entry.name.startsWith(".") || entry.name === DISABLED_DIR_NAME) {
+      return;
+    }
+    if (!entry.isDirectory() && !entry.isSymbolicLink()) {
+      return;
+    }
+    records.push(buildSkillRecord(entry.name, path.join(dirPath, entry.name), scope, target, false, stateIndex));
+  });
+
+  if (fs.existsSync(disabledDir)) {
+    const disabledEntries = fs.readdirSync(disabledDir, { withFileTypes: true });
+    disabledEntries.forEach((entry) => {
+      if (entry.name.startsWith(".")) {
+        return;
+      }
+      if (!entry.isDirectory() && !entry.isSymbolicLink()) {
+        return;
+      }
+      records.push(
+        buildSkillRecord(entry.name, path.join(disabledDir, entry.name), scope, target, true, stateIndex)
+      );
+    });
+  }
+
+  return records;
+}
+
+function buildSkillRecord(name, entryPath, scope, target, disabled, stateIndex) {
+  const record = {
+    name,
+    scope,
+    target,
+    path: entryPath,
+    mode: "unknown",
+    status: "ok",
+    disabled: Boolean(disabled),
+    managed: false,
+    source: "",
+    duplicate: false,
+  };
+
+  try {
+    const stat = fs.lstatSync(entryPath);
+    if (stat.isSymbolicLink()) {
+      record.mode = "link";
+      try {
+        record.source = fs.realpathSync(entryPath);
+      } catch (error) {
+        record.status = "broken";
+      }
+    } else if (stat.isDirectory()) {
+      record.mode = "copy";
+    } else {
+      record.status = "missing";
+    }
+  } catch (error) {
+    record.status = "missing";
+  }
+
+  if (record.status === "ok") {
+    const skillFile = path.join(entryPath, "SKILL.md");
+    if (!fs.existsSync(skillFile)) {
+      record.status = "missing-skill-file";
+    }
+  }
+
+  if (record.disabled) {
+    record.status = "disabled";
+  }
+
+  if (stateIndex) {
+    const entry = stateIndex.get(stateKey(name, scope, target));
+    if (entry) {
+      record.managed = true;
+      if (entry.source && !record.source) {
+        record.source = entry.source;
+      }
+      if (entry.mode && record.mode === "unknown") {
+        record.mode = entry.mode;
+      }
+    }
+  }
+
+  return record;
+}
+
+function markDuplicates(records) {
+  const counts = new Map();
+  records.forEach((record) => {
+    const key = `${record.target}:${record.name}`;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  });
+  records.forEach((record) => {
+    const key = `${record.target}:${record.name}`;
+    if (counts.get(key) > 1) {
+      record.duplicate = true;
+    }
+  });
+}
+
+function formatSkillStatus(record) {
+  const tags = [];
+  if (record.status && record.status !== "ok") {
+    tags.push(record.status);
+  }
+  if (record.duplicate) {
+    tags.push("duplicate");
+  }
+  if (!tags.length) {
+    tags.push("ok");
+  }
+  return tags.join(",");
+}
+
+function printSkillList(records, format) {
+  const isJson = String(format || "").toLowerCase() === "json";
+  if (!records.length) {
+    if (isJson) {
+      console.log("[]");
+      return;
+    }
+    console.log("No skills found.");
+    return;
+  }
+
+  const sorted = [...records].sort((a, b) => {
+    if (a.name !== b.name) {
+      return a.name.localeCompare(b.name);
+    }
+    if (a.target !== b.target) {
+      return a.target.localeCompare(b.target);
+    }
+    return a.scope.localeCompare(b.scope);
+  });
+
+  if (isJson) {
+    console.log(JSON.stringify(sorted, null, 2));
+    return;
+  }
+
+  const headers = ["Name", "Target", "Scope", "Mode", "Status", "Managed", "Source", "Path"];
+  const rows = sorted.map((record) => [
+    record.name,
+    record.target,
+    record.scope,
+    record.mode,
+    formatSkillStatus(record),
+    record.managed ? "yes" : "no",
+    record.source || "-",
+    record.path,
+  ]);
+  const widths = headers.map((header, index) =>
+    Math.max(header.length, ...rows.map((row) => String(row[index]).length))
+  );
+
+  const formatRow = (row) =>
+    row
+      .map((cell, index) => {
+        const value = String(cell);
+        return index === row.length - 1 ? value : value.padEnd(widths[index]);
+      })
+      .join("  ");
+
+  console.log(formatRow(headers));
+  console.log(formatRow(headers.map((header) => "-".repeat(header.length))));
+  rows.forEach((row) => console.log(formatRow(row)));
+}
+
+function resolveSkillMatches(name, options, env, stateIndex, defaultScope) {
+  const scopeInfo = normalizeScopeList(options.scope, env.projectRoot, defaultScope || "both");
+  const targetInfo = normalizeTargetList(options.target, "both");
+  const scan = scanSkills(env.scopeDirs, scopeInfo.scopes, targetInfo.targets, stateIndex);
+  const matches = scan.records.filter((record) => record.name === name);
+  return { matches, scopeInfo, targetInfo, warnings: [...scopeInfo.warnings, ...targetInfo.warnings] };
+}
+
+function installSkill(sourceDir, targetPath, installOptions) {
+  const mode = installOptions && installOptions.mode ? installOptions.mode : "link";
+  const dryRun = installOptions && installOptions.dryRun;
+  const overwrite = installOptions && installOptions.overwrite;
+
+  if (overwrite && fs.existsSync(targetPath)) {
+    if (!dryRun) {
+      safeUnlink(targetPath);
+    }
+  }
+
+  if (dryRun) {
+    return { mode, dryRun: true };
+  }
+
+  ensureDir(path.dirname(targetPath), false);
+
+  if (mode === "copy") {
+    fs.cpSync(sourceDir, targetPath, { recursive: true });
+    return { mode: "copy" };
+  }
+
+  const linkType = process.platform === "win32" ? "junction" : "dir";
+  try {
+    fs.symlinkSync(sourceDir, targetPath, linkType);
+    return { mode: "link" };
+  } catch (error) {
+    fs.cpSync(sourceDir, targetPath, { recursive: true });
+    return { mode: "copy", fallback: "symlink_failed" };
+  }
+}
+
+function handleSkillsList(options, args, settings) {
+  const env = buildSkillEnvironment(settings);
+  const scopeInfo = normalizeScopeList(options.scope, env.projectRoot, "both");
+  const targetInfo = normalizeTargetList(options.target, "both");
+  const state = loadStateFile(env.statePath);
+  const stateIndex = indexStateEntries(state);
+
+  const scan = scanSkills(env.scopeDirs, scopeInfo.scopes, targetInfo.targets, stateIndex);
+  [...scopeInfo.warnings, ...targetInfo.warnings, ...scan.warnings].forEach((warning) =>
+    console.error(`Warning: ${warning}`)
+  );
+  printSkillList(scan.records, options.format);
+  return Promise.resolve();
+}
+
+function handleSkillsInfo(options, args, settings) {
+  const name = args[0];
+  if (!name) {
+    console.error("Usage: agent-playbook skills info <name>");
+    process.exitCode = 1;
+    return Promise.resolve();
+  }
+
+  const env = buildSkillEnvironment(settings);
+  const scopeInfo = normalizeScopeList(options.scope, env.projectRoot, "both");
+  const targetInfo = normalizeTargetList(options.target, "both");
+  const state = loadStateFile(env.statePath);
+  const stateIndex = indexStateEntries(state);
+  const scan = scanSkills(env.scopeDirs, scopeInfo.scopes, targetInfo.targets, stateIndex);
+  [...scopeInfo.warnings, ...targetInfo.warnings, ...scan.warnings].forEach((warning) =>
+    console.error(`Warning: ${warning}`)
+  );
+
+  const matches = scan.records.filter((record) => record.name === name);
+  if (!matches.length) {
+    console.error(`Skill not found: ${name}`);
+    process.exitCode = 1;
+    return Promise.resolve();
+  }
+
+  printSkillList(matches, options.format);
+  return Promise.resolve();
+}
+
+function handleSkillsAdd(options, args, settings) {
+  const input = args[0];
+  if (!input) {
+    console.error("Usage: agent-playbook skills add <name|path>");
+    process.exitCode = 1;
+    return Promise.resolve();
+  }
+
+  const env = buildSkillEnvironment(settings);
+  const defaultScope = env.projectRoot ? "project" : "global";
+  const scopeInfo = normalizeScopeList(options.scope, env.projectRoot, defaultScope);
+  const targetInfo = normalizeTargetList(options.target, "both");
+  const resolved = resolveSkillInput(input, env);
+  const installMode = resolveInstallMode(options, "link");
+
+  if (resolved.error) {
+    console.error(resolved.error);
+    process.exitCode = 1;
+    return Promise.resolve();
+  }
+
+  [...scopeInfo.warnings, ...targetInfo.warnings].forEach((warning) =>
+    console.error(`Warning: ${warning}`)
+  );
+
+  const state = loadStateFile(env.statePath);
+  const stateIndex = indexStateEntries(state);
+  const overwriteState = createOverwriteState(options);
+  const now = new Date().toISOString();
+  const created = [];
+  const skipped = [];
+
+  scopeInfo.scopes.forEach((scope) => {
+    const dirs = env.scopeDirs[scope];
+    if (!dirs) {
+      return;
+    }
+    targetInfo.targets.forEach((target) => {
+      const targetDir = dirs[target];
+      if (!targetDir) {
+        return;
+      }
+      ensureDir(targetDir, options["dry-run"]);
+      const targetPath = path.join(targetDir, resolved.name);
+      if (fs.existsSync(targetPath)) {
+        if (!shouldOverwriteExisting(options, overwriteState, targetPath)) {
+          skipped.push({ scope, target, path: targetPath });
+          return;
+        }
+        if (!options["dry-run"]) {
+          safeUnlink(targetPath);
+        }
+      }
+
+      const install = installSkill(resolved.sourceDir, targetPath, {
+        mode: installMode,
+        dryRun: options["dry-run"],
+      });
+      created.push({ scope, target, path: targetPath, mode: install.mode });
+
+      const key = stateKey(resolved.name, scope, target);
+      const entry = stateIndex.get(key) || {
+        name: resolved.name,
+        scope,
+        target,
+        managed_by: "apb",
+        installed_at: now,
+      };
+      entry.source = resolved.sourceDir;
+      entry.mode = install.mode;
+      entry.disabled = false;
+      entry.updated_at = now;
+      stateIndex.set(key, entry);
+    });
+  });
+
+  state.skills = Array.from(stateIndex.values());
+  state.updated_at = now;
+  saveStateFile(env.statePath, state, options["dry-run"]);
+
+  console.log(`Added skill "${resolved.name}".`);
+  if (created.length) {
+    created.forEach((item) =>
+      console.log(`- ${item.scope}/${item.target}: ${item.path} (${item.mode})`)
+    );
+  }
+  if (skipped.length) {
+    skipped.forEach((item) => console.log(`- Skipped ${item.scope}/${item.target}: ${item.path}`));
+  }
+  if (options["dry-run"]) {
+    console.log("- Dry run: no changes written.");
+  }
+
+  return Promise.resolve();
+}
+
+function handleSkillsRemove(options, args, settings) {
+  const name = args[0];
+  if (!name) {
+    console.error("Usage: agent-playbook skills remove <name>");
+    process.exitCode = 1;
+    return Promise.resolve();
+  }
+
+  const env = buildSkillEnvironment(settings);
+  const state = loadStateFile(env.statePath);
+  const stateIndex = indexStateEntries(state);
+  const matchesInfo = resolveSkillMatches(name, options, env, stateIndex, "both");
+  matchesInfo.warnings.forEach((warning) => console.error(`Warning: ${warning}`));
+
+  const matches = matchesInfo.matches;
+  const hasFilters = Boolean(options.scope || options.target);
+  if (!matches.length) {
+    const stateKeys = Array.from(stateIndex.keys()).filter((key) => key.endsWith(`:${name}`));
+    if (stateKeys.length) {
+      stateKeys.forEach((key) => stateIndex.delete(key));
+      state.skills = Array.from(stateIndex.values());
+      state.updated_at = new Date().toISOString();
+      saveStateFile(env.statePath, state, options["dry-run"]);
+      console.log(`Removed ${stateKeys.length} state entries for "${name}".`);
+      return Promise.resolve();
+    }
+    console.error(`Skill not found: ${name}`);
+    process.exitCode = 1;
+    return Promise.resolve();
+  }
+
+  if (!hasFilters && matches.length > 1) {
+    console.error(`Multiple matches for "${name}". Use --scope or --target to disambiguate.`);
+    matches.forEach((match) =>
+      console.error(`- ${match.scope}/${match.target}: ${match.path}`)
+    );
+    process.exitCode = 1;
+    return Promise.resolve();
+  }
+
+  const removed = [];
+  const skipped = [];
+
+  matches.forEach((match) => {
+    const key = stateKey(match.name, match.scope, match.target);
+    const managed = stateIndex.has(key);
+    if (!managed && !options.force) {
+      skipped.push({ scope: match.scope, target: match.target, path: match.path });
+      return;
+    }
+    if (!options["dry-run"]) {
+      safeUnlink(match.path);
+    }
+    stateIndex.delete(key);
+    removed.push({ scope: match.scope, target: match.target, path: match.path });
+  });
+
+  state.skills = Array.from(stateIndex.values());
+  state.updated_at = new Date().toISOString();
+  saveStateFile(env.statePath, state, options["dry-run"]);
+
+  if (removed.length) {
+    removed.forEach((item) => console.log(`Removed ${item.scope}/${item.target}: ${item.path}`));
+  }
+  if (skipped.length) {
+    skipped.forEach((item) =>
+      console.log(`Skipped unmanaged ${item.scope}/${item.target}: ${item.path} (use --force)`)
+    );
+  }
+  if (options["dry-run"]) {
+    console.log("- Dry run: no changes written.");
+  }
+
+  return Promise.resolve();
+}
+
+function handleSkillsDisable(options, args, settings) {
+  const name = args[0];
+  if (!name) {
+    console.error("Usage: agent-playbook skills disable <name>");
+    process.exitCode = 1;
+    return Promise.resolve();
+  }
+
+  const env = buildSkillEnvironment(settings);
+  const state = loadStateFile(env.statePath);
+  const stateIndex = indexStateEntries(state);
+  const matchesInfo = resolveSkillMatches(name, options, env, stateIndex, "both");
+  matchesInfo.warnings.forEach((warning) => console.error(`Warning: ${warning}`));
+
+  const candidates = matchesInfo.matches.filter((match) => !match.disabled);
+  if (!candidates.length) {
+    console.error(`No enabled skill found for "${name}".`);
+    process.exitCode = 1;
+    return Promise.resolve();
+  }
+
+  const hasFilters = Boolean(options.scope || options.target);
+  if (!hasFilters && candidates.length > 1) {
+    console.error(`Multiple matches for "${name}". Use --scope or --target to disambiguate.`);
+    candidates.forEach((match) =>
+      console.error(`- ${match.scope}/${match.target}: ${match.path}`)
+    );
+    process.exitCode = 1;
+    return Promise.resolve();
+  }
+
+  const overwriteState = createOverwriteState(options);
+  const now = new Date().toISOString();
+  const disabled = [];
+
+  candidates.forEach((match) => {
+    const skillsRoot = path.dirname(match.path);
+    const disabledDir = path.join(skillsRoot, DISABLED_DIR_NAME);
+    const disabledPath = path.join(disabledDir, match.name);
+    if (fs.existsSync(disabledPath)) {
+      if (!shouldOverwriteExisting(options, overwriteState, disabledPath)) {
+        return;
+      }
+      if (!options["dry-run"]) {
+        safeUnlink(disabledPath);
+      }
+    }
+    ensureDir(disabledDir, options["dry-run"]);
+    if (!options["dry-run"]) {
+      fs.renameSync(match.path, disabledPath);
+    }
+    disabled.push({ scope: match.scope, target: match.target, path: disabledPath });
+
+    const key = stateKey(match.name, match.scope, match.target);
+    const entry = stateIndex.get(key);
+    if (entry) {
+      entry.disabled = true;
+      entry.updated_at = now;
+    }
+  });
+
+  state.skills = Array.from(stateIndex.values());
+  state.updated_at = now;
+  saveStateFile(env.statePath, state, options["dry-run"]);
+
+  disabled.forEach((item) => console.log(`Disabled ${item.scope}/${item.target}: ${item.path}`));
+  if (options["dry-run"]) {
+    console.log("- Dry run: no changes written.");
+  }
+
+  return Promise.resolve();
+}
+
+function handleSkillsEnable(options, args, settings) {
+  const name = args[0];
+  if (!name) {
+    console.error("Usage: agent-playbook skills enable <name>");
+    process.exitCode = 1;
+    return Promise.resolve();
+  }
+
+  const env = buildSkillEnvironment(settings);
+  const state = loadStateFile(env.statePath);
+  const stateIndex = indexStateEntries(state);
+  const matchesInfo = resolveSkillMatches(name, options, env, stateIndex, "both");
+  matchesInfo.warnings.forEach((warning) => console.error(`Warning: ${warning}`));
+
+  const candidates = matchesInfo.matches.filter((match) => match.disabled);
+  if (!candidates.length) {
+    console.error(`No disabled skill found for "${name}".`);
+    process.exitCode = 1;
+    return Promise.resolve();
+  }
+
+  const hasFilters = Boolean(options.scope || options.target);
+  if (!hasFilters && candidates.length > 1) {
+    console.error(`Multiple matches for "${name}". Use --scope or --target to disambiguate.`);
+    candidates.forEach((match) =>
+      console.error(`- ${match.scope}/${match.target}: ${match.path}`)
+    );
+    process.exitCode = 1;
+    return Promise.resolve();
+  }
+
+  const overwriteState = createOverwriteState(options);
+  const now = new Date().toISOString();
+  const enabled = [];
+
+  candidates.forEach((match) => {
+    const skillsRoot = path.dirname(path.dirname(match.path));
+    const targetPath = path.join(skillsRoot, match.name);
+    if (fs.existsSync(targetPath)) {
+      if (!shouldOverwriteExisting(options, overwriteState, targetPath)) {
+        return;
+      }
+      if (!options["dry-run"]) {
+        safeUnlink(targetPath);
+      }
+    }
+    if (!options["dry-run"]) {
+      fs.renameSync(match.path, targetPath);
+    }
+    enabled.push({ scope: match.scope, target: match.target, path: targetPath });
+
+    const key = stateKey(match.name, match.scope, match.target);
+    const entry = stateIndex.get(key);
+    if (entry) {
+      entry.disabled = false;
+      entry.updated_at = now;
+    }
+  });
+
+  state.skills = Array.from(stateIndex.values());
+  state.updated_at = now;
+  saveStateFile(env.statePath, state, options["dry-run"]);
+
+  enabled.forEach((item) => console.log(`Enabled ${item.scope}/${item.target}: ${item.path}`));
+  if (options["dry-run"]) {
+    console.log("- Dry run: no changes written.");
+  }
+
+  return Promise.resolve();
+}
+
+function checkSkillPath(targetPath) {
+  if (!fs.existsSync(targetPath)) {
+    return "missing";
+  }
+  try {
+    const stat = fs.lstatSync(targetPath);
+    if (stat.isSymbolicLink()) {
+      try {
+        fs.realpathSync(targetPath);
+      } catch (error) {
+        return "broken";
+      }
+    }
+    const skillFile = path.join(targetPath, "SKILL.md");
+    if (!fs.existsSync(skillFile)) {
+      return "missing-skill-file";
+    }
+  } catch (error) {
+    return "missing";
+  }
+  return "ok";
+}
+
+function handleSkillsDoctor(options, args, settings) {
+  const env = buildSkillEnvironment(settings);
+  const scopeInfo = normalizeScopeList(options.scope, env.projectRoot, "both");
+  const targetInfo = normalizeTargetList(options.target, "both");
+  const state = loadStateFile(env.statePath);
+  const stateIndex = indexStateEntries(state);
+  const scan = scanSkills(env.scopeDirs, scopeInfo.scopes, targetInfo.targets, stateIndex);
+
+  const issues = [];
+  const duplicateKeys = new Set();
+
+  scan.records.forEach((record) => {
+    if (record.status === "broken" || record.status === "missing-skill-file") {
+      issues.push(`${record.scope}/${record.target}/${record.name}: ${record.status}`);
+    }
+    if (record.duplicate) {
+      const key = `${record.target}:${record.name}`;
+      if (!duplicateKeys.has(key)) {
+        duplicateKeys.add(key);
+        issues.push(`${record.target}/${record.name}: duplicate across scopes`);
+      }
+    }
+    if (!record.managed) {
+      issues.push(`${record.scope}/${record.target}/${record.name}: unmanaged skill`);
+    }
+  });
+
+  state.skills.forEach((entry) => {
+    const dirs = env.scopeDirs[entry.scope];
+    if (!dirs) {
+      return;
+    }
+    const root = dirs[entry.target];
+    if (!root) {
+      return;
+    }
+    const activePath = path.join(root, entry.name);
+    const disabledPath = path.join(root, DISABLED_DIR_NAME, entry.name);
+    const pathToCheck = entry.disabled ? disabledPath : activePath;
+    const status = checkSkillPath(pathToCheck);
+    if (status !== "ok") {
+      issues.push(`${entry.scope}/${entry.target}/${entry.name}: managed entry ${status}`);
+    }
+  });
+
+  if (issues.length) {
+    console.error("Issues detected:");
+    issues.forEach((issue) => console.error(`- ${issue}`));
+    process.exitCode = 1;
+  } else {
+    console.log("No critical issues detected.");
+  }
+
+  if (options.fix) {
+    const now = new Date().toISOString();
+    const overwrite = true;
+    let fixedCount = 0;
+
+    state.skills.forEach((entry) => {
+      const dirs = env.scopeDirs[entry.scope];
+      if (!dirs) {
+        return;
+      }
+      const root = dirs[entry.target];
+      if (!root) {
+        return;
+      }
+      const activePath = path.join(root, entry.name);
+      const disabledPath = path.join(root, DISABLED_DIR_NAME, entry.name);
+      if (entry.disabled) {
+        const activeStatus = checkSkillPath(activePath);
+        const disabledStatus = checkSkillPath(disabledPath);
+        if (activeStatus === "ok") {
+          if (disabledStatus === "ok") {
+            if (!options["dry-run"]) {
+              safeUnlink(disabledPath);
+            }
+          }
+          entry.disabled = false;
+          entry.updated_at = now;
+          fixedCount += 1;
+          return;
+        }
+        if (disabledStatus === "ok") {
+          return;
+        }
+        if (!fs.existsSync(path.dirname(disabledPath))) {
+          ensureDir(path.dirname(disabledPath), options["dry-run"]);
+        }
+        if (entry.source && fs.existsSync(entry.source)) {
+          installSkill(entry.source, disabledPath, {
+            mode: entry.mode || "link",
+            dryRun: options["dry-run"],
+            overwrite,
+          });
+          entry.updated_at = now;
+          fixedCount += 1;
+        }
+        return;
+      }
+      const activeStatus = checkSkillPath(activePath);
+      if (activeStatus === "ok") {
+        return;
+      }
+      if (entry.source && fs.existsSync(entry.source)) {
+        installSkill(entry.source, activePath, {
+          mode: entry.mode || "link",
+          dryRun: options["dry-run"],
+          overwrite,
+        });
+        entry.updated_at = now;
+        fixedCount += 1;
+      }
+    });
+
+    state.updated_at = now;
+    saveStateFile(env.statePath, state, options["dry-run"]);
+    console.log(`Fixed ${fixedCount} managed entries.`);
+    if (options["dry-run"]) {
+      console.log("- Dry run: no changes written.");
+    }
+  }
+
+  return Promise.resolve();
+}
+
+function handleSkillsSync(options, args, settings) {
+  const env = buildSkillEnvironment(settings);
+  const state = loadStateFile(env.statePath);
+  const now = new Date().toISOString();
+  let changed = false;
+
+  const nextSkills = [];
+  state.skills.forEach((entry) => {
+    const dirs = env.scopeDirs[entry.scope];
+    if (!dirs) {
+      changed = true;
+      return;
+    }
+    const root = dirs[entry.target];
+    if (!root) {
+      changed = true;
+      return;
+    }
+    const activePath = path.join(root, entry.name);
+    const disabledPath = path.join(root, DISABLED_DIR_NAME, entry.name);
+    if (entry.disabled) {
+      if (fs.existsSync(disabledPath)) {
+        nextSkills.push(entry);
+        return;
+      }
+      if (fs.existsSync(activePath)) {
+        entry.disabled = false;
+        entry.updated_at = now;
+        nextSkills.push(entry);
+        changed = true;
+        return;
+      }
+      changed = true;
+      return;
+    }
+    if (fs.existsSync(activePath)) {
+      nextSkills.push(entry);
+      return;
+    }
+    if (fs.existsSync(disabledPath)) {
+      entry.disabled = true;
+      entry.updated_at = now;
+      nextSkills.push(entry);
+      changed = true;
+      return;
+    }
+    changed = true;
+  });
+
+  state.skills = nextSkills;
+  state.updated_at = now;
+  if (changed) {
+    saveStateFile(env.statePath, state, options["dry-run"]);
+    console.log("State synchronized.");
+  } else {
+    console.log("State already in sync.");
+  }
+  if (options["dry-run"]) {
+    console.log("- Dry run: no changes written.");
+  }
+  return Promise.resolve();
+}
+
+function handleSkillsUpgrade(options, args, settings) {
+  const env = buildSkillEnvironment(settings);
+  const state = loadStateFile(env.statePath);
+  const overwrite = true;
+  const now = new Date().toISOString();
+  const sourceRoot = options.source ? path.resolve(options.source) : env.skillsSource;
+  const defaultMode = resolveInstallMode(options, "link");
+  let upgraded = 0;
+  let skipped = 0;
+
+  state.skills.forEach((entry) => {
+    if (entry.disabled) {
+      skipped += 1;
+      return;
+    }
+    const dirs = env.scopeDirs[entry.scope];
+    if (!dirs) {
+      skipped += 1;
+      return;
+    }
+    const root = dirs[entry.target];
+    if (!root) {
+      skipped += 1;
+      return;
+    }
+    const activePath = path.join(root, entry.name);
+    let sourceDir = entry.source;
+    if (sourceRoot) {
+      const candidate = path.join(sourceRoot, entry.name);
+      if (fs.existsSync(path.join(candidate, "SKILL.md"))) {
+        sourceDir = candidate;
+      }
+    }
+    if (!sourceDir || !fs.existsSync(sourceDir)) {
+      skipped += 1;
+      return;
+    }
+
+    const install = installSkill(sourceDir, activePath, {
+      mode: entry.mode || defaultMode,
+      dryRun: options["dry-run"],
+      overwrite,
+    });
+    entry.source = sourceDir;
+    entry.mode = install.mode;
+    entry.updated_at = now;
+    entry.installed_at = now;
+    upgraded += 1;
+  });
+
+  state.updated_at = now;
+  saveStateFile(env.statePath, state, options["dry-run"]);
+  console.log(`Upgraded ${upgraded} managed skills. Skipped ${skipped}.`);
+  if (options["dry-run"]) {
+    console.log("- Dry run: no changes written.");
+  }
+  return Promise.resolve();
+}
+
+function handleSkillsExport(options, args, settings) {
+  const outputPath = options.output;
+  if (!outputPath) {
+    console.error("Usage: agent-playbook skills export --output <file>");
+    process.exitCode = 1;
+    return Promise.resolve();
+  }
+
+  const env = buildSkillEnvironment(settings);
+  const state = loadStateFile(env.statePath);
+  const resolved = path.resolve(outputPath);
+  ensureDir(path.dirname(resolved), options["dry-run"]);
+  if (!options["dry-run"]) {
+    fs.writeFileSync(resolved, JSON.stringify(state, null, 2));
+  }
+  console.log(`Exported state to ${resolved}`);
+  if (options["dry-run"]) {
+    console.log("- Dry run: no changes written.");
+  }
+  return Promise.resolve();
+}
+
+function handleSkillsImport(options, args, settings) {
+  const inputPath = args[0];
+  if (!inputPath) {
+    console.error("Usage: agent-playbook skills import <file>");
+    process.exitCode = 1;
+    return Promise.resolve();
+  }
+
+  const resolved = path.resolve(inputPath);
+  if (!fs.existsSync(resolved)) {
+    console.error(`Import file not found: ${resolved}`);
+    process.exitCode = 1;
+    return Promise.resolve();
+  }
+
+  let imported;
+  try {
+    imported = JSON.parse(fs.readFileSync(resolved, "utf8"));
+  } catch (error) {
+    console.error("Invalid import file.");
+    process.exitCode = 1;
+    return Promise.resolve();
+  }
+
+  const env = buildSkillEnvironment(settings);
+  const overwriteState = createOverwriteState(options);
+  const now = new Date().toISOString();
+  const defaultMode = resolveInstallMode(options, "link");
+  const skills = Array.isArray(imported.skills) ? imported.skills : [];
+  const state = {
+    version: imported.version || "1",
+    updated_at: now,
+    skills: skills,
+  };
+
+  let applied = 0;
+  let skipped = 0;
+  skills.forEach((entry) => {
+    if (!entry || !entry.name || !entry.scope || !entry.target) {
+      skipped += 1;
+      return;
+    }
+    if (entry.disabled) {
+      return;
+    }
+    const dirs = env.scopeDirs[entry.scope];
+    if (!dirs) {
+      skipped += 1;
+      return;
+    }
+    const root = dirs[entry.target];
+    if (!root) {
+      skipped += 1;
+      return;
+    }
+    const targetPath = path.join(root, entry.name);
+    let sourceDir = entry.source;
+    if (options.source) {
+      const candidate = path.join(path.resolve(options.source), entry.name);
+      if (fs.existsSync(path.join(candidate, "SKILL.md"))) {
+        sourceDir = candidate;
+      }
+    }
+    if (!sourceDir || !fs.existsSync(sourceDir)) {
+      skipped += 1;
+      return;
+    }
+    if (fs.existsSync(targetPath)) {
+      if (!shouldOverwriteExisting(options, overwriteState, targetPath)) {
+        skipped += 1;
+        return;
+      }
+      if (!options["dry-run"]) {
+        safeUnlink(targetPath);
+      }
+    }
+    installSkill(sourceDir, targetPath, {
+      mode: entry.mode || defaultMode,
+      dryRun: options["dry-run"],
+    });
+    entry.updated_at = now;
+    applied += 1;
+  });
+
+  saveStateFile(env.statePath, state, options["dry-run"]);
+  console.log(`Imported state (${applied} applied, ${skipped} skipped).`);
+  if (options["dry-run"]) {
+    console.log("- Dry run: no changes written.");
+  }
+  return Promise.resolve();
 }
 
 function ensureLocalCli(settings, context, options) {
@@ -941,6 +2174,7 @@ function collectStatus(settings) {
     codexConfigPath: settings.codexConfigPath,
     claudeSkillsDir: settings.claudeSkillsDir,
     codexSkillsDir: settings.codexSkillsDir,
+    geminiSkillsDir: settings.geminiSkillsDir,
     claudeSettingsReadable: claudeSettings !== null || !fs.existsSync(settings.claudeSettingsPath),
     codexBlockPresent: hasCodexBlock(settings.codexConfigPath),
     hooksInstalled: hasHooks(settings.claudeSettingsPath),
@@ -948,6 +2182,7 @@ function collectStatus(settings) {
     localCliPresent: fs.existsSync(path.join(settings.claudeDir, LOCAL_CLI_DIR, "bin", "agent-playbook.js")),
     claudeSkillCount: countSkills(settings.claudeSkillsDir),
     codexSkillCount: countSkills(settings.codexSkillsDir),
+    geminiSkillCount: countSkills(settings.geminiSkillsDir),
   };
 }
 
@@ -995,27 +2230,37 @@ function printStatus(status) {
   console.log(`- Codex config: ${status.codexConfigPath}`);
   console.log(`- Claude skills: ${status.claudeSkillsDir}`);
   console.log(`- Codex skills: ${status.codexSkillsDir}`);
+  console.log(`- Gemini skills: ${status.geminiSkillsDir}`);
   console.log(`- Claude skills count: ${status.claudeSkillCount}`);
   console.log(`- Codex skills count: ${status.codexSkillCount}`);
+  console.log(`- Gemini skills count: ${status.geminiSkillCount}`);
   console.log(`- Hooks installed: ${status.hooksInstalled ? "yes" : "no"}`);
   console.log(`- Manifest present: ${status.manifestPresent ? "yes" : "no"}`);
   console.log(`- Local CLI present: ${status.localCliPresent ? "yes" : "no"}`);
   console.log(`- Codex config block: ${status.codexBlockPresent ? "yes" : "no"}`);
 }
 
-function printInitSummary(settings, hooksEnabled, options, claudeLinks, codexLinks, warnings) {
+function printInitSummary(settings, hooksEnabled, options, claudeLinks, codexLinks, geminiLinks, warnings) {
   console.log("Init complete.");
   console.log(`- Claude skills: ${settings.claudeSkillsDir}`);
   console.log(`- Codex skills: ${settings.codexSkillsDir}`);
+  console.log(`- Gemini skills: ${settings.geminiSkillsDir}`);
   console.log(`- Hooks: ${hooksEnabled ? "enabled" : "disabled"}`);
-  console.log(`- Linked skills: ${claudeLinks.created.length + codexLinks.created.length}`);
+  const linkedCount =
+    claudeLinks.created.length + codexLinks.created.length + (geminiLinks ? geminiLinks.created.length : 0);
+  console.log(`- Linked skills: ${linkedCount}`);
   const overwrittenCount =
     (claudeLinks.overwritten ? claudeLinks.overwritten.length : 0) +
-    (codexLinks.overwritten ? codexLinks.overwritten.length : 0);
+    (codexLinks.overwritten ? codexLinks.overwritten.length : 0) +
+    (geminiLinks && geminiLinks.overwritten ? geminiLinks.overwritten.length : 0);
   if (overwrittenCount) {
     console.log(`- Overwritten skills: ${overwrittenCount}`);
   }
-  if (claudeLinks.skipped.length || codexLinks.skipped.length) {
+  if (
+    claudeLinks.skipped.length ||
+    codexLinks.skipped.length ||
+    (geminiLinks && geminiLinks.skipped.length)
+  ) {
     console.log("- Some skills were skipped due to existing paths.");
   }
   if (warnings && warnings.length) {
@@ -1181,6 +2426,7 @@ function handleRepair(options, context) {
   if (!options["dry-run"]) {
     ensureDir(settings.claudeSkillsDir, false);
     ensureDir(settings.codexSkillsDir, false);
+    ensureDir(settings.geminiSkillsDir, false);
   }
 
   if (!status.localCliPresent) {
@@ -1205,6 +2451,7 @@ function handleRepair(options, context) {
   if (settings.skillsSource) {
     linkSkills(settings.skillsSource, settings.claudeSkillsDir, options, overwriteState);
     linkSkills(settings.skillsSource, settings.codexSkillsDir, options, overwriteState);
+    linkSkills(settings.skillsSource, settings.geminiSkillsDir, options, overwriteState);
     if (!options["dry-run"]) {
       const manifestPath = path.join(settings.claudeSkillsDir, ".agent-playbook.json");
       if (!fs.existsSync(manifestPath)) {
@@ -1214,12 +2461,20 @@ function handleRepair(options, context) {
           installedAt: new Date().toISOString(),
           repairedAt: new Date().toISOString(),
           repoRoot: settings.repoRoot,
-          links: { claude: [], codex: [] },
+          links: { claude: [], codex: [], gemini: [] },
         });
       }
     }
   }
 
-  printInitSummary(settings, true, options, { created: [], skipped: [] }, { created: [], skipped: [] }, warnings);
+  printInitSummary(
+    settings,
+    true,
+    options,
+    { created: [], skipped: [] },
+    { created: [], skipped: [] },
+    { created: [], skipped: [] },
+    warnings
+  );
   return Promise.resolve();
 }

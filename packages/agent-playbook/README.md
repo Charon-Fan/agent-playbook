@@ -1,6 +1,6 @@
 # @codeharbor/agent-playbook
 
-One-command installer and workflow fixer for agent-playbook across Claude Code and Codex.
+Local skill manager and installer for agent-playbook across Claude Code, Codex, and Gemini.
 
 ## Quick Start
 
@@ -17,10 +17,11 @@ pnpm dlx @codeharbor/agent-playbook init --project
 ```
 
 ## What It Does
-- Links skills to `~/.claude/skills` and `~/.codex/skills` (or project `.claude/.codex`).
+- Links skills to `~/.claude/skills`, `~/.codex/skills`, and `~/.gemini/skills` (or project `.claude/.codex/.gemini`).
 - Installs a stable CLI copy under `~/.claude/agent-playbook/` for hook execution.
 - Adds Claude hooks for SessionEnd (session logs) and PostToolUse (self-improve MVP).
 - Records a metadata block in `~/.codex/config.toml`.
+- Provides a local-only skills manager via `apb skills ...`.
 
 ## Commands
 - `agent-playbook init [--project] [--copy] [--overwrite] [--hooks] [--no-hooks] [--session-dir <path>] [--dry-run] [--repo <path>]`
@@ -30,6 +31,18 @@ pnpm dlx @codeharbor/agent-playbook init --project
 - `agent-playbook uninstall`
 - `agent-playbook session-log [--session-dir <path>]`
 - `agent-playbook self-improve`
+- `agent-playbook skills [list|info|add|remove|enable|disable|doctor|sync|upgrade|export|import]`
+
+`apb` is a short alias for `agent-playbook`.
+
+## Skills Manager Examples
+
+```bash
+apb skills list --scope both --target all
+apb skills add ./skills/my-skill --scope project --target claude
+apb skills disable my-skill --scope project --target claude
+apb skills enable my-skill --scope project --target claude
+```
 
 ## Notes
 - Default session logs go to repo `sessions/` if a Git root is found; otherwise `~/.claude/sessions/`.
@@ -39,6 +52,7 @@ pnpm dlx @codeharbor/agent-playbook init --project
 - Requires Node.js 18+.
 
 ## Advanced
-- Override Claude/Codex config paths for testing:
+- Override Claude/Codex/Gemini config paths for testing:
   - `AGENT_PLAYBOOK_CLAUDE_DIR=/tmp/claude`
   - `AGENT_PLAYBOOK_CODEX_DIR=/tmp/codex`
+  - `AGENT_PLAYBOOK_GEMINI_DIR=/tmp/gemini`
