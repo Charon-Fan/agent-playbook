@@ -1755,6 +1755,9 @@ function updateClaudeSettings(settings, cliPath, options) {
   const data = existing || {};
 
   data.hooks = data.hooks || {};
+  const marker = `--hook-source ${HOOK_SOURCE_VALUE}`;
+  data.hooks = removeHookCommand(data.hooks, "SessionEnd", marker);
+  data.hooks = removeHookCommand(data.hooks, "PostToolUse", marker);
 
   let sessionCommand = buildHookCommand(cliPath, "session-log");
   sessionCommand = `${sessionCommand} --hook-source ${HOOK_SOURCE_VALUE}`;
@@ -1891,8 +1894,11 @@ function upsertCodexBlock(content, values) {
 }
 
 function removeCodexBlock(content) {
-  const pattern = /^\[agent_playbook\][\s\S]*?(?=^\[|\s*$)/m;
-  return content.replace(pattern, "").trimEnd();
+  const pattern = /^\[agent_playbook\][\s\S]*?(?=^\[|\s*$)/gm;
+  const cleaned = content.replace(pattern, "");
+  const legacyPattern =
+    /(?:\n\s*version\s*=\s*\"[^\"]*\"\s*\n\s*installed_at\s*=\s*\"[^\"]*\"\s*)+$/;
+  return cleaned.replace(legacyPattern, "\n").trimEnd();
 }
 
 function buildHookCommand(cliPath, subcommand) {
