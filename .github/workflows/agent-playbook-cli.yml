@@ -1,0 +1,27 @@
+name: agent-playbook-cli
+
+on:
+  push:
+    paths:
+      - "packages/agent-playbook/**"
+      - ".github/workflows/agent-playbook-cli.yml"
+  pull_request:
+    paths:
+      - "packages/agent-playbook/**"
+      - ".github/workflows/agent-playbook-cli.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Lint CLI
+        run: node -c packages/agent-playbook/src/cli.js
+      - name: Run CLI tests
+        run: node --test packages/agent-playbook/test/*.test.js

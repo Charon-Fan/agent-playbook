@@ -1,0 +1,27 @@
+{
+  "name": "@codeharbor/agent-playbook",
+  "version": "0.1.1",
+  "description": "One-click installer and workflow fixer for agent-playbook across Claude Code and Codex.",
+  "license": "MIT",
+  "type": "commonjs",
+  "bin": {
+    "agent-playbook": "bin/agent-playbook.js"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "lint": "node -c src/cli.js",
+    "prepack": "node scripts/sync-skills.js copy",
+    "postpack": "node scripts/sync-skills.js clean"
+  },
+  "files": [
+    "bin",
+    "src",
+    "skills",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}

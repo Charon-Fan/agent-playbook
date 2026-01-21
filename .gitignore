@@ -18,3 +18,4 @@ notes/
 .DS_Store
 Thumbs.db
 node_modules/
+packages/agent-playbook/skills/

@@ -10,6 +10,22 @@ This repository organizes and stores practical resources for working with AI Age
 
 ## Installation
 
+### Method 0: One-Command Installer (PNPM/NPM)
+
+Sets up skills for Claude Code and Codex, and wires hooks for session logging and self-improvement.
+
+```bash
+pnpm dlx @codeharbor/agent-playbook init
+# or
+npm exec -- @codeharbor/agent-playbook init
+```
+
+Project-only setup:
+
+```bash
+pnpm dlx @codeharbor/agent-playbook init --project
+```
+
 ### Method 1: Symbolic Links (Recommended)
 
 Link the skills to your global Claude Code skills directory:
