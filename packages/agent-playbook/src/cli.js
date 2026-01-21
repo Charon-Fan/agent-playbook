@@ -352,7 +352,16 @@ function createOverwriteState(options) {
 function promptYesNo(question, defaultYes) {
   const suffix = defaultYes ? "[Y/n]" : "[y/N]";
   process.stdout.write(`${question} ${suffix} `);
-  const answer = readLineSync().toLowerCase();
+  let answer = "";
+  try {
+    answer = readLineSync().toLowerCase();
+  } catch (error) {
+    if (error && error.code === "EAGAIN") {
+      console.error("Warning: unable to read prompt input; skipping overwrite.");
+      return defaultYes;
+    }
+    throw error;
+  }
   if (!answer) {
     return defaultYes;
   }
@@ -362,14 +371,42 @@ function promptYesNo(question, defaultYes) {
 function readLineSync() {
   const buffer = Buffer.alloc(1024);
   let input = "";
+  const ttyPath = process.platform === "win32" ? null : "/dev/tty";
+  let fd = 0;
+  let shouldClose = false;
+
+  if (ttyPath) {
+    try {
+      fd = fs.openSync(ttyPath, "r");
+      shouldClose = true;
+    } catch (error) {
+      fd = 0;
+    }
+  }
+
   while (true) {
-    const bytes = fs.readSync(0, buffer, 0, buffer.length, null);
+    let bytes = 0;
+    try {
+      bytes = fs.readSync(fd, buffer, 0, buffer.length, null);
+    } catch (error) {
+      if (error && error.code === "EAGAIN") {
+        continue;
+      }
+      throw error;
+    }
     if (bytes <= 0) {
       break;
     }
     input += buffer.toString("utf8", 0, bytes);
     if (input.includes("\n")) {
       break;
+    }
+  }
+  if (shouldClose) {
+    try {
+      fs.closeSync(fd);
+    } catch (error) {
+      return input.trim();
     }
   }
   return input.trim();
