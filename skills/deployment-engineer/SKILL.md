@@ -2,6 +2,12 @@
 name: deployment-engineer
 description: Deployment automation specialist for CI/CD pipelines and infrastructure. Use when setting up deployment, configuring CI/CD, or managing releases.
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
+metadata:
+  hooks:
+    after_complete:
+      - trigger: session-logger
+        mode: auto
+        reason: "Log deployment activity"
 ---
 
 # Deployment Engineer

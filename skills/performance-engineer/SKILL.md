@@ -2,6 +2,15 @@
 name: performance-engineer
 description: Performance optimization specialist for improving application speed and efficiency. Use when investigating performance issues or optimizing code.
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
+metadata:
+  hooks:
+    after_complete:
+      - trigger: self-improving-agent
+        mode: background
+        reason: "Learn from performance patterns"
+      - trigger: session-logger
+        mode: auto
+        reason: "Log performance optimization"
 ---
 
 # Performance Engineer

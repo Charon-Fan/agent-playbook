@@ -2,6 +2,12 @@
 name: create-pr
 description: Creates pull requests with bilingual documentation updates. Use when user asks to create PR, make a pull request, or submit changes for review. Automatically updates both English and Chinese README files.
 allowed-tools: Read, Write, Edit, Bash, Grep, AskUserQuestion
+metadata:
+  hooks:
+    after_complete:
+      - trigger: session-logger
+        mode: auto
+        reason: "Log PR creation"
 ---
 
 # Create PR

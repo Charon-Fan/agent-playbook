@@ -2,6 +2,15 @@
 name: debugger
 description: Advanced debugging specialist for diagnosing and resolving code issues. Use when user encounters bugs, errors, unexpected behavior, or mentions debugging.
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
+metadata:
+  hooks:
+    after_complete:
+      - trigger: self-improving-agent
+        mode: background
+        reason: "Learn from debugging patterns"
+      - trigger: session-logger
+        mode: auto
+        reason: "Log debugging session"
 ---
 
 # Debugger

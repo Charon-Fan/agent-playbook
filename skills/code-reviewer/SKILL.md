@@ -2,6 +2,15 @@
 name: code-reviewer
 description: Reviews pull requests and code changes for quality, security, and best practices. Use when user asks for code review, PR review, or mentions reviewing changes.
 allowed-tools: Read, Grep, Glob, Bash, WebFetch, WebSearch
+metadata:
+  hooks:
+    after_complete:
+      - trigger: self-improving-agent
+        mode: background
+        reason: "Learn from review patterns"
+      - trigger: session-logger
+        mode: auto
+        reason: "Log review activity"
 ---
 
 # Code Reviewer

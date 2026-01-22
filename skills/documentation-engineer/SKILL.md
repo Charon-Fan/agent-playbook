@@ -2,6 +2,12 @@
 name: documentation-engineer
 description: Technical documentation expert for creating clear, comprehensive documentation. Use when user asks to write docs, create README, or document code.
 allowed-tools: Read, Write, Edit, Grep, Glob, WebFetch, WebSearch
+metadata:
+  hooks:
+    after_complete:
+      - trigger: session-logger
+        mode: auto
+        reason: "Log documentation activity"
 ---
 
 # Documentation Engineer

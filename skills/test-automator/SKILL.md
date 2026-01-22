@@ -2,6 +2,12 @@
 name: test-automator
 description: Test automation framework expert for creating and maintaining automated tests. Use when user asks to write tests, automate testing, or improve test coverage.
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
+metadata:
+  hooks:
+    after_complete:
+      - trigger: session-logger
+        mode: auto
+        reason: "Log test creation"
 ---
 
 # Test Automator

@@ -2,6 +2,15 @@
 name: architecting-solutions
 description: Designs technical solutions and architecture. Use when user says "design solution", "architecture design", "technical design", or "方案设计" WITHOUT mentioning PRD. For PRD-specific work, use prd-planner skill instead.
 allowed-tools: Read, Write, Edit, Bash, AskUserQuestion, WebSearch, Grep, Glob
+metadata:
+  hooks:
+    after_complete:
+      - trigger: self-improving-agent
+        mode: background
+        reason: "Learn from architecture patterns"
+      - trigger: session-logger
+        mode: auto
+        reason: "Log architecture design"
 ---
 
 # Architecting Solutions

@@ -154,3 +154,123 @@ Session logs are stored in `sessions/` which is in `.gitignore`.
 3. **Include code snippets**: Save important solutions
 4. **Track decisions**: Why did you choose X over Y?
 5. **List pending items**: What to do next time
+
+## Rich Content Extraction (for Self-Improving Agent)
+
+When triggered by other skills via hooks, session-logger extracts structured data for learning:
+
+### Skill Context Capture
+
+When a skill completes, capture:
+
+```markdown
+## Skill Execution Context
+
+**Skill**: {skill-name}
+**Trigger**: {user-invoked | hook-triggered | auto-triggered}
+**Status**: {completed | error | partial}
+**Duration**: {approximate time}
+
+### Input Context
+- User request: {original request}
+- Files involved: {list of files}
+- Codebase patterns detected: {patterns}
+
+### Output Summary
+- Actions taken: {list}
+- Files modified: {list with changes}
+- Decisions made: {key decisions}
+
+### Learning Signals
+- What worked well: {successes}
+- What could improve: {areas for improvement}
+- Patterns discovered: {new patterns}
+- Errors encountered: {errors and resolutions}
+```
+
+### Error Context Capture
+
+When a skill encounters errors:
+
+```markdown
+## Error Context
+
+**Error Type**: {type}
+**Error Message**: {message}
+**Stack Trace**: {if available}
+
+### Resolution Attempted
+- Approach: {what was tried}
+- Result: {success/failure}
+- Root cause: {if identified}
+
+### Prevention Notes
+- How to avoid: {prevention strategy}
+- Related patterns: {similar issues}
+```
+
+### Pattern Extraction
+
+Extract reusable patterns for the self-improving-agent:
+
+```markdown
+## Extracted Patterns
+
+### Code Patterns
+- Pattern name: {name}
+- Context: {when to use}
+- Example: {code snippet}
+
+### Workflow Patterns
+- Trigger: {what initiates}
+- Steps: {sequence}
+- Outcome: {expected result}
+
+### Anti-Patterns
+- Pattern: {what to avoid}
+- Why: {reason}
+- Alternative: {better approach}
+```
+
+### Structured Data Format
+
+For machine-readable extraction, use YAML front matter in session logs:
+
+```yaml
+---
+session_type: skill_execution
+skill_name: code-reviewer
+trigger_source: hook
+status: completed
+files_modified:
+  - path: src/utils.ts
+    changes: refactored error handling
+patterns_learned:
+  - name: error-boundary-pattern
+    category: error-handling
+    confidence: high
+errors_encountered: []
+learning_signals:
+  successes:
+    - "Identified code smell in utils.ts"
+  improvements:
+    - "Could have suggested more specific refactoring"
+---
+```
+
+### Integration with Self-Improving Agent
+
+When triggered by `self-improving-agent`:
+
+1. **Extract episodic memory**: Capture the full context of what happened
+2. **Identify semantic patterns**: Tag reusable knowledge
+3. **Update working memory**: Note immediate follow-ups needed
+4. **Signal completion**: Write trigger file if skill chaining is needed
+
+### Auto-Trigger Behavior
+
+When invoked via hooks with `mode: auto`:
+- Silently create/update session log
+- Extract structured data without user interaction
+- Append to existing session if same day/topic
+- Create new session if context differs significantly
