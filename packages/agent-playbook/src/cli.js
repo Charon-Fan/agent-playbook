@@ -264,9 +264,16 @@ async function handleSelfImprove(options) {
   const memoryRoot = path.join(os.homedir(), ".claude", "memory");
   const episodicDir = path.join(memoryRoot, "episodic", String(now.getFullYear()));
   const workingDir = path.join(memoryRoot, "working");
+  const triggersDir = path.join(memoryRoot, "triggers");
 
   ensureDir(episodicDir, false);
   ensureDir(workingDir, false);
+  ensureDir(triggersDir, false);
+
+  const toolName = input.tool_name || "";
+  const toolInput = input.tool_input || {};
+  const toolOutput = input.tool_output || {};
+  const hookEvent = input.hook_event_name || "PostToolUse";
 
   const entry = {
     id: `ep-${now.toISOString()}`.replace(/[:.]/g, "-"),
@@ -275,10 +282,56 @@ async function handleSelfImprove(options) {
     cwd,
     transcript_path: transcriptPath,
     agent_playbook_version: VERSION,
-    hook_event: input.hook_event_name || "PostToolUse",
-    tool_name: input.tool_name || "",
-    tool_input: input.tool_input || "",
+    hook_event: hookEvent,
+    tool_name: toolName,
+    tool_input: toolInput,
+    tool_output: typeof toolOutput === "string" ? toolOutput.slice(0, 2000) : toolOutput,
   };
+
+  // Detect skill invocations and completions
+  if (toolName === "Skill") {
+    const skillName = toolInput.skill || "";
+    entry.skill_invoked = skillName;
+    entry.skill_args = toolInput.args || "";
+
+    // Track skill start in working memory
+    const skillStatePath = path.join(workingDir, "active_skills.json");
+    const skillState = readJsonSafe(skillStatePath) || { active: [], history: [] };
+
+    if (!skillState.active.includes(skillName)) {
+      skillState.active.push(skillName);
+      skillState.history.push({
+        skill: skillName,
+        started_at: now.toISOString(),
+        session_id: sessionId,
+      });
+      writeJson(skillStatePath, skillState);
+    }
+  }
+
+  // Detect skill completion patterns in tool output
+  const skillCompletion = detectSkillCompletion(toolName, toolInput, toolOutput, cwd);
+  if (skillCompletion) {
+    entry.skill_completed = skillCompletion.skill;
+    entry.completion_type = skillCompletion.type;
+
+    // Update active skills state
+    const skillStatePath = path.join(workingDir, "active_skills.json");
+    const skillState = readJsonSafe(skillStatePath) || { active: [], history: [] };
+    skillState.active = skillState.active.filter((s) => s !== skillCompletion.skill);
+
+    const historyEntry = skillState.history.find(
+      (h) => h.skill === skillCompletion.skill && !h.completed_at
+    );
+    if (historyEntry) {
+      historyEntry.completed_at = now.toISOString();
+      historyEntry.completion_type = skillCompletion.type;
+    }
+    writeJson(skillStatePath, skillState);
+
+    // Create trigger file for skill chaining
+    createSkillTrigger(triggersDir, skillCompletion, sessionId, cwd, now);
+  }
 
   const entryPath = path.join(episodicDir, `${entry.id}.json`);
   fs.writeFileSync(entryPath, JSON.stringify(entry, null, 2));
@@ -286,6 +339,145 @@ async function handleSelfImprove(options) {
   const workingPath = path.join(workingDir, "current_session.json");
   fs.writeFileSync(workingPath, JSON.stringify(entry, null, 2));
   console.error(`Self-improvement entry saved to ${entryPath}`);
+}
+
+function detectSkillCompletion(toolName, toolInput, toolOutput, cwd) {
+  const outputStr = typeof toolOutput === "string" ? toolOutput : JSON.stringify(toolOutput);
+
+  // Detect PRD completion
+  if (toolName === "Write" || toolName === "Edit") {
+    const filePath = toolInput.file_path || "";
+    if (filePath.includes("-prd.md") || filePath.includes("prd-task-plan.md")) {
+      if (outputStr.includes("COMPLETE") || outputStr.includes("Phase 6")) {
+        return { skill: "prd-planner", type: "prd_complete", file: filePath };
+      }
+    }
+  }
+
+  // Detect commit completion (commit-helper)
+  if (toolName === "Bash") {
+    const command = toolInput.command || "";
+    if (command.includes("git commit") && !outputStr.includes("error") && !outputStr.includes("fatal")) {
+      return { skill: "commit-helper", type: "commit_complete", command };
+    }
+  }
+
+  // Detect PR creation (create-pr)
+  if (toolName === "Bash") {
+    const command = toolInput.command || "";
+    if (command.includes("gh pr create") && outputStr.includes("github.com")) {
+      const prUrlMatch = outputStr.match(/https:\/\/github\.com\/[^\s]+\/pull\/\d+/);
+      return {
+        skill: "create-pr",
+        type: "pr_created",
+        pr_url: prUrlMatch ? prUrlMatch[0] : null,
+      };
+    }
+  }
+
+  // Detect test completion
+  if (toolName === "Bash") {
+    const command = toolInput.command || "";
+    if (
+      (command.includes("npm test") ||
+        command.includes("bun test") ||
+        command.includes("pytest") ||
+        command.includes("go test")) &&
+      (outputStr.includes("passed") || outputStr.includes("PASS"))
+    ) {
+      return { skill: "test-automator", type: "tests_passed", command };
+    }
+  }
+
+  // Detect session log creation
+  if (toolName === "Write") {
+    const filePath = toolInput.file_path || "";
+    if (filePath.includes("sessions/") && filePath.endsWith(".md")) {
+      return { skill: "session-logger", type: "session_saved", file: filePath };
+    }
+  }
+
+  return null;
+}
+
+function createSkillTrigger(triggersDir, completion, sessionId, cwd, now) {
+  const triggerFile = path.join(
+    triggersDir,
+    `${completion.skill}-${now.toISOString().replace(/[:.]/g, "-")}.json`
+  );
+
+  const trigger = {
+    source_skill: completion.skill,
+    completion_type: completion.type,
+    timestamp: now.toISOString(),
+    session_id: sessionId,
+    cwd,
+    details: completion,
+    pending_triggers: getHooksForSkill(completion.skill, completion.type),
+  };
+
+  writeJson(triggerFile, trigger);
+  console.error(`Skill trigger created: ${completion.skill} -> ${trigger.pending_triggers.map((t) => t.trigger).join(", ") || "none"}`);
+}
+
+function getHooksForSkill(skillName, completionType) {
+  // Define hooks based on skill completion
+  const hookDefinitions = {
+    "prd-planner": {
+      after_complete: [
+        { trigger: "self-improving-agent", mode: "background" },
+        { trigger: "session-logger", mode: "auto" },
+      ],
+    },
+    "prd-implementation-precheck": {
+      after_complete: [
+        { trigger: "code-reviewer", mode: "ask_first" },
+        { trigger: "self-improving-agent", mode: "background" },
+        { trigger: "session-logger", mode: "auto" },
+      ],
+    },
+    "commit-helper": {
+      after_complete: [{ trigger: "session-logger", mode: "auto" }],
+    },
+    "create-pr": {
+      after_complete: [{ trigger: "session-logger", mode: "auto" }],
+    },
+    "code-reviewer": {
+      after_complete: [
+        { trigger: "self-improving-agent", mode: "background" },
+        { trigger: "session-logger", mode: "auto" },
+      ],
+    },
+    "debugger": {
+      after_complete: [
+        { trigger: "self-improving-agent", mode: "background" },
+        { trigger: "session-logger", mode: "auto" },
+      ],
+    },
+    "refactoring-specialist": {
+      after_complete: [
+        { trigger: "self-improving-agent", mode: "background" },
+        { trigger: "session-logger", mode: "auto" },
+      ],
+    },
+    "test-automator": {
+      after_complete: [{ trigger: "session-logger", mode: "auto" }],
+    },
+    "self-improving-agent": {
+      after_complete: [
+        { trigger: "create-pr", mode: "ask_first", condition: "skills_modified" },
+        { trigger: "session-logger", mode: "auto" },
+      ],
+    },
+  };
+
+  const hooks = hookDefinitions[skillName];
+  if (!hooks) {
+    return [];
+  }
+
+  // Return after_complete hooks by default
+  return hooks.after_complete || [];
 }
 
 function handleSkills(options, positionals, context) {

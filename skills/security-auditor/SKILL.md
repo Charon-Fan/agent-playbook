@@ -2,6 +2,15 @@
 name: security-auditor
 description: Security vulnerability expert covering OWASP Top 10 and common security issues. Use when conducting security audits or reviewing code for vulnerabilities.
 allowed-tools: Read, Grep, Glob, Bash, WebSearch
+metadata:
+  hooks:
+    after_complete:
+      - trigger: self-improving-agent
+        mode: background
+        reason: "Learn from security patterns"
+      - trigger: session-logger
+        mode: auto
+        reason: "Log security audit"
 ---
 
 # Security Auditor

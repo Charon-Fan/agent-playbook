@@ -1,6 +1,16 @@
 ---
 name: prd-implementation-precheck
 description: Implement PRDs/specs with a mandatory precheck review before coding. Use when a user asks to implement a PRD/feature spec/requirements doc or says "implement PRD/spec". Perform a preflight review, raise questions on scope/consistency/risks, then implement after confirmation.
+allowed-tools: Read, Write, Edit, Bash, Grep, Glob, AskUserQuestion
+metadata:
+  hooks:
+    after_complete:
+      - trigger: self-improving-agent
+        mode: background
+        reason: "Learn from implementation patterns"
+      - trigger: session-logger
+        mode: auto
+        reason: "Log PRD implementation activity"
 ---
 
 # PRD Implementation Precheck

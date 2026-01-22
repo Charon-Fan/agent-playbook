@@ -2,6 +2,15 @@
 name: api-designer
 description: REST and GraphQL API architect for designing robust, scalable APIs. Use when designing new APIs or improving existing ones.
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob, WebFetch, WebSearch
+metadata:
+  hooks:
+    after_complete:
+      - trigger: self-improving-agent
+        mode: background
+        reason: "Learn from API design patterns"
+      - trigger: session-logger
+        mode: auto
+        reason: "Log API design activity"
 ---
 
 # API Designer

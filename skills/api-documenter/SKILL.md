@@ -2,6 +2,12 @@
 name: api-documenter
 description: API documentation specialist for OpenAPI/Swagger specifications. Use when documenting REST or GraphQL APIs.
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
+metadata:
+  hooks:
+    after_complete:
+      - trigger: session-logger
+        mode: auto
+        reason: "Log documentation activity"
 ---
 
 # API Documenter

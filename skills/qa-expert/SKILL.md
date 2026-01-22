@@ -2,6 +2,12 @@
 name: qa-expert
 description: Quality assurance expert for testing strategies and quality gates. Use when planning test coverage, setting up QA processes, or improving quality standards.
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob, WebFetch, WebSearch
+metadata:
+  hooks:
+    after_complete:
+      - trigger: session-logger
+        mode: auto
+        reason: "Log QA activity"
 ---
 
 # QA Expert

@@ -2,6 +2,15 @@
 name: refactoring-specialist
 description: Code refactoring expert for improving code structure, readability, and maintainability. Use when user asks to refactor, clean up, or improve code quality.
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
+metadata:
+  hooks:
+    after_complete:
+      - trigger: self-improving-agent
+        mode: background
+        reason: "Learn from refactoring patterns"
+      - trigger: session-logger
+        mode: auto
+        reason: "Log refactoring activity"
 ---
 
 # Refactoring Specialist

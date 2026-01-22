@@ -2,6 +2,12 @@
 name: commit-helper
 description: Helps write Git commit messages following the Conventional Commits specification. Use this skill when the user asks to commit changes, write commit messages, format commits, or mentions git commits.
 allowed-tools: Read, Write, Edit, Bash, Grep
+metadata:
+  hooks:
+    after_complete:
+      - trigger: session-logger
+        mode: auto
+        reason: "Log commit activity"
 ---
 
 # Commit Message Helper
